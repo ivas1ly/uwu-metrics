@@ -144,6 +144,7 @@ func TestMetricsHandler(t *testing.T) {
 			h.ServeHTTP(nr, request)
 
 			res := nr.Result()
+			defer res.Body.Close()
 
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, test.want.statusCode, res.StatusCode)
