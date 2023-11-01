@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"fmt"
@@ -11,16 +11,21 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
-type Handler struct {
+type MetricsHandler struct {
 	storage storage.Storage
 	logger  *slog.Logger
 }
 
-func (h *Handler) NewMetricsRoutes(mux *http.ServeMux) {
+func NewMetricsRoutes(mux *http.ServeMux, storage storage.Storage, logger *slog.Logger) {
+	h := MetricsHandler{
+		storage: storage,
+		logger:  logger,
+	}
+
 	mux.Handle("/update/", http.StripPrefix("/update/", http.HandlerFunc(h.update)))
 }
 
-func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
+func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -74,5 +79,5 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) {
 	h.storage.Update(mName, metric)
 	h.logger.Info("metric saved")
 
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 }

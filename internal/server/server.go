@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ivas1ly/uwu-metrics/internal/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
@@ -22,22 +23,16 @@ func Run() {
 
 	memStorage := storage.NewMemStorage()
 	mux := http.NewServeMux()
-
-	handler := Handler{
-		storage: memStorage,
-		logger:  logger,
-	}
-	handler.NewMetricsRoutes(mux)
+	handlers.NewMetricsRoutes(mux, memStorage, logger)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
-		return
 	})
 
 	log.Printf("server started on port %s", addr)
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
-		// net/http will recover panic by default
+		// net/http recovers panic by default
 		panic(err)
 	}
 }
