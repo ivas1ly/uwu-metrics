@@ -16,12 +16,14 @@ type MetricsHandler struct {
 	logger  *slog.Logger
 }
 
-func NewMetricsRoutes(mux *http.ServeMux, storage storage.Storage, logger *slog.Logger) {
-	h := MetricsHandler{
+func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHandler {
+	return &MetricsHandler{
 		storage: storage,
 		logger:  logger,
 	}
+}
 
+func (h *MetricsHandler) NewMetricsRoutes(mux *http.ServeMux) {
 	mux.Handle("/update/", http.StripPrefix("/update/", http.HandlerFunc(h.update)))
 }
 

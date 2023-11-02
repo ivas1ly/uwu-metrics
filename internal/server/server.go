@@ -23,7 +23,8 @@ func Run() {
 
 	memStorage := storage.NewMemStorage()
 	mux := http.NewServeMux()
-	handlers.NewMetricsRoutes(mux, memStorage, logger)
+	handler := handlers.NewMetricsHandler(memStorage, logger)
+	handler.NewMetricsRoutes(mux)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
