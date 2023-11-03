@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/ivas1ly/uwu-metrics/internal/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
@@ -22,16 +24,18 @@ func Run() {
 	slog.SetDefault(logger)
 
 	memStorage := storage.NewMemStorage()
-	mux := http.NewServeMux()
-	handler := handlers.NewMetricsHandler(memStorage, logger)
-	handler.NewMetricsRoutes(mux)
+	router := chi.NewRouter()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	handler := handlers.NewMetricsHandler(memStorage, logger)
+	handler.NewMetricsRoutes(router)
+
+	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("route not found :(", slog.String("path", r.URL.Path))
 		http.NotFound(w, r)
-	})
+	}))
 
 	log.Printf("server started on port %s", addr)
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(addr, router)
 	if err != nil {
 		// net/http recovers panic by default
 		panic(err)

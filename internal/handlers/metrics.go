@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/ivas1ly/uwu-metrics/internal/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
@@ -22,32 +24,29 @@ func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHan
 	}
 }
 
-func (h *MetricsHandler) NewMetricsRoutes(mux *http.ServeMux) {
-	mux.Handle("/update/", http.StripPrefix("/update/", http.HandlerFunc(h.update)))
+func (h *MetricsHandler) NewMetricsRoutes(router *chi.Mux) {
+	router.Post("/update/{type}/{name}/{value}", h.update)
 }
 
 func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+	mType := strings.ToLower(chi.URLParam(r, "type"))
+	if mType == "" {
+		slog.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
+		http.NotFound(w, r)
 		return
 	}
 
-	slog.Debug("url path", slog.String("url path", r.URL.Path))
-	splitedPath := strings.Split(r.URL.Path, "/")
-	if len(splitedPath) == 1 || splitedPath[1] == "" {
+	mName := chi.URLParam(r, "name")
+	if mName == "" {
 		slog.Warn("can't get metric name in url", slog.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
 
-	var mType, mName, mValue string
-	if len(splitedPath) == 3 {
-		mType, mName, mValue = splitedPath[0], splitedPath[1], splitedPath[2]
-	}
-
+	mValue := chi.URLParam(r, "value")
 	if mValue == "" {
-		h.logger.Error("incorrect metric value", slog.String("value", mValue))
-		http.Error(w, fmt.Sprintf("incorrect metric value: %q", mValue), http.StatusBadRequest)
+		h.logger.Error("can't get metric value", slog.String("value", mValue))
+		http.Error(w, fmt.Sprintf("can't get metric value %q", mValue), http.StatusBadRequest)
 		return
 	}
 
@@ -63,7 +62,7 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("incorrect metric type or value; recieved type: %q, value: %q", mType, mValue), http.StatusBadRequest)
 		return
 	}
-	h.logger.Info("metric saved")
+	h.logger.Info("metric saved", slog.String("metric", fmt.Sprintf("%+v", metric)))
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 }
