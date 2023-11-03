@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/ivas1ly/uwu-metrics/internal/metrics"
@@ -48,37 +47,22 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 
 	if mValue == "" {
 		h.logger.Error("incorrect metric value", slog.String("value", mValue))
-		http.Error(w, fmt.Sprintf("incorrect metric value %q", mValue), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("incorrect metric value: %q", mValue), http.StatusBadRequest)
 		return
 	}
 
-	metric := metrics.Metric{}
-	switch mType {
-	case "gauge":
-		value, err := strconv.ParseFloat(mValue, 64)
-		if err != nil {
-			h.logger.Error("incorrect metric value", slog.String("value", mValue))
-			http.Error(w, fmt.Sprintf("incorrect metric value %q", mValue), http.StatusBadRequest)
-			return
-		}
-		metric.Gauge = value
-		metric.Type = mType
-	case "counter":
-		value, err := strconv.ParseInt(mValue, 10, 64)
-		if err != nil {
-			h.logger.Error("incorrect metric value", slog.String("value", mValue))
-			http.Error(w, fmt.Sprintf("incorrect metric value %q", mValue), http.StatusBadRequest)
-			return
-		}
-		metric.Counter = value
-		metric.Type = mType
-	default:
-		h.logger.Error("incorrect metric type", slog.String("type", mType))
-		http.Error(w, fmt.Sprintf("incorrect metric type %q", mType), http.StatusBadRequest)
-		return
+	metric := metrics.Metric{
+		Type:  mType,
+		Name:  mName,
+		Value: mValue,
 	}
 
-	h.storage.Update(mName, metric)
+	err := h.storage.Update(metric)
+	if err != nil {
+		h.logger.Error("incorrect metric type or value", slog.String("error", err.Error()))
+		http.Error(w, fmt.Sprintf("incorrect metric type or value; recieved type: %q, value: %q", mType, mValue), http.StatusBadRequest)
+		return
+	}
 	h.logger.Info("metric saved")
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
