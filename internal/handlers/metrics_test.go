@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -153,31 +156,45 @@ func TestMetricsHandler(t *testing.T) {
 }
 
 type TestStorage struct {
-	testCollection map[string]metrics.Metric
+	gauge   map[string]float64
+	counter map[string]int64
 }
 
 func NewTestStorage() storage.Storage {
 	return &TestStorage{
-		testCollection: make(map[string]metrics.Metric),
+		gauge:   make(map[string]float64),
+		counter: make(map[string]int64),
 	}
 }
 
-func (ts *TestStorage) Update(name string, metrics metrics.Metric) {
-	switch metrics.Type {
+func (ts *TestStorage) Update(metric metrics.Metric) error {
+	switch metric.Type {
 	case "gauge":
-		ts.testCollection[name] = metrics
-	case "counter":
-		if value, ok := ts.testCollection[name]; ok {
-			newCounter := metrics.Counter + value.Counter
-			metrics.Counter = newCounter
-			ts.testCollection[name] = metrics
-		} else {
-			ts.testCollection[name] = metrics
+		value, err := strconv.ParseFloat(metric.Value, 64)
+		if err != nil {
+			return fmt.Errorf("incorrect metric value: %w", err)
 		}
+		ts.gauge[metric.Name] = value
+	case "counter":
+		value, err := strconv.ParseInt(metric.Value, 10, 64)
+		if err != nil {
+			return fmt.Errorf("incorrect metric value: %w", err)
+		}
+		if _, ok := ts.counter[metric.Name]; ok {
+			ts.counter[metric.Name] += value
+		} else {
+			ts.counter[metric.Name] = value
+		}
+	default:
+		return errors.New("unknown metric type")
 	}
+
 	ts.Get()
+
+	return nil
 }
 
 func (ts *TestStorage) Get() {
-	log.Printf("collection: %+v\n", ts.testCollection)
+	log.Printf("collection counter: %+v\n", ts.counter)
+	log.Printf("collection gauge: %+v\n", ts.gauge)
 }
