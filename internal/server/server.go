@@ -12,11 +12,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
-const (
-	addr = ":8080"
-)
-
-func Run() {
+func Run(cfg *Config) {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}
@@ -34,8 +30,8 @@ func Run() {
 		http.NotFound(w, r)
 	}))
 
-	log.Printf("server started on port %s", addr)
-	err := http.ListenAndServe(addr, router)
+	log.Printf("server started on %s", cfg.Endpoint)
+	err := http.ListenAndServe(cfg.Endpoint, router)
 	if err != nil {
 		// net/http recovers panic by default
 		panic(err)

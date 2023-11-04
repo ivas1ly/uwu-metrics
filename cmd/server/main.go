@@ -5,5 +5,7 @@ import (
 )
 
 func main() {
-	server.Run()
+	cfg := server.NewConfig()
+
+	server.Run(cfg)
 }
