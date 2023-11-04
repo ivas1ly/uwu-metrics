@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics</title>
+
+    <link
+            href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css"
+            rel="stylesheet"
+            type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body>
+<div class="grid h-screen ">
+    <div class="">
+        <div class="flex flex-col m-auto mx-12">
+            <div class="flex">
+                <h1 class="mt-6 text-6xl font-bold">Metrics</h1>
+            </div>
+            <div class="flex flex-col mt-6">
+                <div>
+                    <h2 class="text-base font-medium mb-6 badge badge-info badge-outline badge-lg">Updated at {{ .now }}</h2>
+                    <table class="table table-fixed min-w-96 max-w-4xl">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Value</th>
+                            <th>Type</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{ range $key, $value := .Gauge }}
+                            <tr class="hover">
+                                <td>{{ $key }}</td>
+                                <td>{{ $value }}</td>
+                                <td><span class="badge badge-secondary badge-outline">Gauge</span></td>
+                            </tr>
+                        {{ end }}
+                        {{ range $key, $value := .Counter }}
+                            <tr class="hover">
+                                <td>{{ $key }}</td>
+                                <td>{{ $value }}</td>
+                                <td><span class="badge badge-accent badge-outline">Counter</span></td>
+                            </tr>
+                        {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

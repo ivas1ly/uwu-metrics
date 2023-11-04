@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"embed"
 	"fmt"
+	"html/template"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -28,6 +31,7 @@ func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHan
 func (h *MetricsHandler) NewMetricsRoutes(router *chi.Mux) {
 	router.Post("/update/{type}/{name}/{value}", h.update)
 	router.Get("/value/{type}/{name}", h.value)
+	router.Get("/", h.webpage)
 }
 
 func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +69,7 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.logger.Info("metric saved", slog.String("metric", fmt.Sprintf("%+v", metric)))
+	h.logger.Debug("in storage", slog.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 }
@@ -114,6 +119,33 @@ func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	default:
 		h.logger.Error("unknown metric type", slog.String("type", mType))
 		http.NotFound(w, r)
+		return
+	}
+}
+
+//go:embed templates
+var content embed.FS
+
+func (h *MetricsHandler) webpage(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFS(content, "templates/*.gohtml")
+	if err != nil {
+		h.logger.Error("can't parse template from fs", slog.String("error", err.Error()))
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	m := h.storage.GetMetrics()
+
+	viewMap := template.FuncMap{
+		"now":     time.Now().Format(time.RFC850),
+		"Gauge":   m.Gauge,
+		"Counter": m.Counter,
+	}
+
+	err = t.ExecuteTemplate(w, "index.gohtml", viewMap)
+	if err != nil {
+		h.logger.Error("can't execute template", slog.String("error", err.Error()))
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 }

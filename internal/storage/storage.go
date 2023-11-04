@@ -12,6 +12,7 @@ type Storage interface {
 	Update(metric metrics.Metric) error
 	GetCounter(name string) (int64, error)
 	GetGauge(name string) (float64, error)
+	GetMetrics() metrics.Metrics
 }
 
 type MemStorage struct {
@@ -49,6 +50,10 @@ func (ms *MemStorage) Update(metric metrics.Metric) error {
 	}
 
 	return nil
+}
+
+func (ms *MemStorage) GetMetrics() metrics.Metrics {
+	return metrics.Metrics{Counter: ms.counter, Gauge: ms.gauge}
 }
 
 func (ms *MemStorage) GetCounter(name string) (int64, error) {
