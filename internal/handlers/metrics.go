@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -20,25 +21,26 @@ type MetricsHandler struct {
 func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHandler {
 	return &MetricsHandler{
 		storage: storage,
-		logger:  logger,
+		logger:  logger.With(slog.String("handler", "metrics")),
 	}
 }
 
 func (h *MetricsHandler) NewMetricsRoutes(router *chi.Mux) {
 	router.Post("/update/{type}/{name}/{value}", h.update)
+	router.Get("/value/{type}/{name}", h.value)
 }
 
 func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
-		slog.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
+		h.logger.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
 
 	mName := chi.URLParam(r, "name")
 	if mName == "" {
-		slog.Warn("can't get metric name in url", slog.String("path", r.URL.Path))
+		h.logger.Warn("can't get metric name in url", slog.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
@@ -65,4 +67,53 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("metric saved", slog.String("metric", fmt.Sprintf("%+v", metric)))
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+}
+
+func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
+	mType := strings.ToLower(chi.URLParam(r, "type"))
+	if mType == "" {
+		h.logger.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
+		http.NotFound(w, r)
+		return
+	}
+
+	mName := chi.URLParam(r, "name")
+	if mName == "" {
+		h.logger.Warn("can't get metric name in url", slog.String("path", r.URL.Path))
+		http.NotFound(w, r)
+		return
+	}
+
+	switch mType {
+	case "counter":
+		value, err := h.storage.GetCounter(mName)
+		if err != nil {
+			h.logger.Error("can't get counter value", slog.String("error", err.Error()))
+			http.NotFound(w, r)
+			return
+		}
+		_, err = w.Write([]byte(strconv.FormatInt(value, 10)))
+		if err != nil {
+			h.logger.Error("can't format counter value", slog.String("error", err.Error()))
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+	case "gauge":
+		value, err := h.storage.GetGauge(mName)
+		if err != nil {
+			h.logger.Error("can't get gauge value", slog.String("error", err.Error()))
+			http.NotFound(w, r)
+			return
+		}
+		_, err = w.Write([]byte(strconv.FormatFloat(value, 'f', -1, 64)))
+		if err != nil {
+			h.logger.Error("can't format gauge value", slog.String("error", err.Error()))
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+	default:
+		h.logger.Error("unknown metric type", slog.String("type", mType))
+		http.NotFound(w, r)
+		return
+	}
 }

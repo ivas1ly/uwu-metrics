@@ -3,7 +3,6 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/ivas1ly/uwu-metrics/internal/metrics"
@@ -11,7 +10,8 @@ import (
 
 type Storage interface {
 	Update(metric metrics.Metric) error
-	Get()
+	GetCounter(name string) (int64, error)
+	GetGauge(name string) (float64, error)
 }
 
 type MemStorage struct {
@@ -48,12 +48,21 @@ func (ms *MemStorage) Update(metric metrics.Metric) error {
 		return errors.New("unknown metric type")
 	}
 
-	ms.Get()
-
 	return nil
 }
 
-func (ms *MemStorage) Get() {
-	log.Printf("collection counter: %+v\n", ms.counter)
-	log.Printf("collection gauge: %+v\n", ms.gauge)
+func (ms *MemStorage) GetCounter(name string) (int64, error) {
+	counter, ok := ms.counter[name]
+	if !ok {
+		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+	}
+	return counter, nil
+}
+
+func (ms *MemStorage) GetGauge(name string) (float64, error) {
+	gauge, ok := ms.gauge[name]
+	if !ok {
+		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+	}
+	return gauge, nil
 }
