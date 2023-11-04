@@ -240,11 +240,7 @@ func (ts *TestStorage) Update(metric metrics.Metric) error {
 		if err != nil {
 			return fmt.Errorf("incorrect metric value: %w", err)
 		}
-		if _, ok := ts.counter[metric.Name]; ok {
-			ts.counter[metric.Name] += value
-		} else {
-			ts.counter[metric.Name] = value
-		}
+		ts.counter[metric.Name] += value
 	default:
 		return errors.New("unknown metric type")
 	}

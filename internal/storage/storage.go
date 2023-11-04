@@ -40,11 +40,7 @@ func (ms *MemStorage) Update(metric metrics.Metric) error {
 		if err != nil {
 			return fmt.Errorf("incorrect metric value: %w", err)
 		}
-		if _, ok := ms.counter[metric.Name]; ok {
-			ms.counter[metric.Name] += value
-		} else {
-			ms.counter[metric.Name] = value
-		}
+		ms.counter[metric.Name] += value
 	default:
 		return errors.New("unknown metric type")
 	}
