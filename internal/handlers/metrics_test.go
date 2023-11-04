@@ -3,7 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"log"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -37,6 +37,7 @@ func TestMetricsHandler(t *testing.T) {
 	type want struct {
 		contentType string
 		statusCode  int
+		body        string
 	}
 	tests := []struct {
 		name   string
@@ -51,6 +52,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusOK,
+				body:        "",
 			},
 		},
 		{
@@ -60,6 +62,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusOK,
+				body:        "",
 			},
 		},
 		{
@@ -69,6 +72,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusNotFound,
+				body:        "",
 			},
 		},
 		{
@@ -78,6 +82,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusNotFound,
+				body:        "",
 			},
 		},
 		{
@@ -87,6 +92,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusNotFound,
+				body:        "",
 			},
 		},
 		{
@@ -96,6 +102,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusNotFound,
+				body:        "",
 			},
 		},
 		{
@@ -105,6 +112,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
+				body:        "",
 			},
 		},
 		{
@@ -114,6 +122,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
+				body:        "",
 			},
 		},
 		{
@@ -123,6 +132,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
+				body:        "",
 			},
 		},
 		{
@@ -132,6 +142,7 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  http.StatusBadRequest,
+				body:        "",
 			},
 		},
 		{
@@ -141,6 +152,37 @@ func TestMetricsHandler(t *testing.T) {
 			want: want{
 				contentType: "",
 				statusCode:  http.StatusMethodNotAllowed,
+				body:        "",
+			},
+		},
+		{
+			name:   "get metric value with correct name / counter",
+			path:   "/value/counter/uwu",
+			method: http.MethodGet,
+			want: want{
+				contentType: "text/plain; charset=utf-8",
+				statusCode:  http.StatusOK,
+				body:        "123",
+			},
+		},
+		{
+			name:   "get metric value with correct name / gauge",
+			path:   "/value/gauge/owo",
+			method: http.MethodGet,
+			want: want{
+				contentType: "text/plain; charset=utf-8",
+				statusCode:  http.StatusOK,
+				body:        "123.456",
+			},
+		},
+		{
+			name:   "get metric value with incorrect name",
+			path:   "/value/counter/teeeeeeeeeeeeeest",
+			method: http.MethodGet,
+			want: want{
+				contentType: "text/plain; charset=utf-8",
+				statusCode:  http.StatusNotFound,
+				body:        "",
 			},
 		},
 	}
@@ -150,6 +192,14 @@ func TestMetricsHandler(t *testing.T) {
 			res := testRequest(t, ts, test.method, test.path)
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 			assert.Equal(t, test.want.statusCode, res.StatusCode)
+			defer res.Body.Close()
+
+			if test.want.body != "" {
+				resBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+
+				assert.Equal(t, test.want.body, string(resBody))
+			}
 		})
 	}
 }
@@ -161,7 +211,6 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) *http.R
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
 
 	return resp
 }
@@ -200,12 +249,25 @@ func (ts *TestStorage) Update(metric metrics.Metric) error {
 		return errors.New("unknown metric type")
 	}
 
-	ts.Get()
-
 	return nil
 }
 
-func (ts *TestStorage) Get() {
-	log.Printf("collection counter: %+v\n", ts.counter)
-	log.Printf("collection gauge: %+v\n", ts.gauge)
+func (ts *TestStorage) GetMetrics() metrics.Metrics {
+	return metrics.Metrics{Counter: ts.counter, Gauge: ts.gauge}
+}
+
+func (ts *TestStorage) GetCounter(name string) (int64, error) {
+	counter, ok := ts.counter[name]
+	if !ok {
+		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+	}
+	return counter, nil
+}
+
+func (ts *TestStorage) GetGauge(name string) (float64, error) {
+	gauge, ok := ts.gauge[name]
+	if !ok {
+		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+	}
+	return gauge, nil
 }
