@@ -8,19 +8,19 @@ import (
 const (
 	defaultPollInterval   = 2
 	defaultReportInterval = 10
-	defaultEndpointURL    = "localhost:8080"
+	defaultEndpointHost   = "localhost:8080"
 )
 
 type Config struct {
 	PollInterval   time.Duration
 	ReportInterval time.Duration
-	EndpointURL    string
+	EndpointHost   string
 }
 
 func NewConfig() *Config {
 	cfg := &Config{}
 
-	flag.StringVar(&cfg.EndpointURL, "a", defaultEndpointURL, "HTTP server report endpoint, "+
+	flag.StringVar(&cfg.EndpointHost, "a", defaultEndpointHost, "HTTP server report endpoint, "+
 		"example: 'localhost:8080'")
 	ri := flag.Int("r", defaultReportInterval, "frequency of sending metrics "+
 		"to the server, example: '10'")

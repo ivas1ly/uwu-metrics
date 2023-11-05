@@ -25,7 +25,7 @@ func Run(cfg *Config) {
 
 	endpoint := url.URL{
 		Scheme: "http",
-		Host:   cfg.EndpointURL,
+		Host:   cfg.EndpointHost,
 		Path:   "/update/",
 	}
 
@@ -35,7 +35,7 @@ func Run(cfg *Config) {
 		Metrics: &metrics,
 		Logger:  logger,
 	}
-	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointURL), slog.Duration("pollInterval", cfg.PollInterval),
+	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost), slog.Duration("pollInterval", cfg.PollInterval),
 		slog.Duration("reportInterval", cfg.ReportInterval))
 
 	for {
