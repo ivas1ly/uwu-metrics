@@ -4,44 +4,47 @@ import (
 	"log"
 	"log/slog"
 	"math/rand"
+	"net/url"
 	"os"
 	"runtime"
 	"time"
 )
 
-const (
-	pollInterval   = 2
-	reportInterval = 10
-	reportURL      = "http://localhost:8080/update/"
-)
-
-func Run() {
+func Run(cfg *Config) {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
 	slog.SetDefault(logger)
 
-	metricsUpdateTicker := time.NewTicker(pollInterval * time.Second)
-	reportSendTicker := time.NewTicker(reportInterval * time.Second)
+	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
+	reportSendTicker := time.NewTicker(cfg.ReportInterval)
 
 	defer metricsUpdateTicker.Stop()
 	defer reportSendTicker.Stop()
 
+	endpoint := url.URL{
+		Scheme: "http",
+		Host:   cfg.EndpointURL,
+		Path:   "/update/",
+	}
+
 	metrics := Metrics{}
 	client := Client{
-		URL:     reportURL,
+		URL:     endpoint.String(),
 		Metrics: &metrics,
 		Logger:  logger,
 	}
+	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointURL), slog.Duration("pollInterval", cfg.PollInterval),
+		slog.Duration("reportInterval", cfg.ReportInterval))
 
 	for {
 		select {
 		case mut := <-metricsUpdateTicker.C:
-			logger.Info("[update] metrics updated at:", slog.Time("updated at", mut))
+			logger.Info("[update] metrics updated", slog.Time("updated at", mut))
 			metrics.UpdateMetrics()
 		case rst := <-reportSendTicker.C:
-			logger.Info("[report] metrics sent at:", slog.Time("report sent at", rst))
+			logger.Info("[report] metrics sent to server", slog.Time("sent at", rst))
 			client.SendReport()
 		}
 	}
@@ -61,7 +64,7 @@ type Metrics struct {
 func (ms *Metrics) UpdateMetrics() {
 	runtime.ReadMemStats(&ms.MemStats)
 
-	ms.RandomValue = randFloat(1000, 1000000)
+	ms.RandomValue = randFloat(10, 100000)
 	ms.PollCount += 1
 
 	log.Println("all metrics updated")
