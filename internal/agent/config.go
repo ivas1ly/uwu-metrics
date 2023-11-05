@@ -2,6 +2,8 @@ package agent
 
 import (
 	"flag"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -41,6 +43,24 @@ func NewConfig() *Config {
 		cfg.PollInterval = defaultPollInterval * time.Second
 	} else {
 		cfg.PollInterval = time.Duration(*pi) * time.Second
+	}
+
+	if endpointHost := os.Getenv("ADDRESS"); endpointHost != "" {
+		cfg.EndpointHost = endpointHost
+	}
+
+	if reportInterval := os.Getenv("REPORT_INTERVAL"); reportInterval != "" {
+		envValue, err := strconv.Atoi(reportInterval)
+		if err == nil && envValue > 0 {
+			cfg.ReportInterval = time.Duration(envValue) * time.Second
+		}
+	}
+
+	if pollInterval := os.Getenv("POLL_INTERVAL"); pollInterval != "" {
+		envValue, err := strconv.Atoi(pollInterval)
+		if err == nil && envValue > 0 {
+			cfg.PollInterval = time.Duration(envValue) * time.Second
+		}
 	}
 
 	return cfg

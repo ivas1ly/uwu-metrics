@@ -3,6 +3,7 @@ package server
 import (
 	"flag"
 	"net"
+	"os"
 )
 
 const (
@@ -20,6 +21,10 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.Endpoint, "a", net.JoinHostPort(defaultHost, defaultPort), "HTTP server endpoint, "+
 		"example: 'localhost:8080' or ':8080'")
 	flag.Parse()
+
+	if endpoint := os.Getenv("ADDRESS"); endpoint != "" {
+		cfg.Endpoint = endpoint
+	}
 
 	return cfg
 }
