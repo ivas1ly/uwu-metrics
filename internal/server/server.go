@@ -16,7 +16,8 @@ func Run(cfg *Config) {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, opts)).
+		With(slog.String("app", "server"))
 	slog.SetDefault(logger)
 
 	memStorage := storage.NewMemStorage()
