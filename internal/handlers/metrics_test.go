@@ -29,7 +29,7 @@ func TestMetricsHandler(t *testing.T) {
 		logger:  logger,
 	}
 
-	handlers.NewMetricsRoutes(router)
+	handlers.NewRoutes(router)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()

@@ -24,7 +24,7 @@ func Run(cfg *Config) {
 	router := chi.NewRouter()
 
 	handler := handlers.NewMetricsHandler(memStorage, logger)
-	handler.NewMetricsRoutes(router)
+	handler.NewRoutes(router)
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Info("route not found :(", slog.String("path", r.URL.Path))

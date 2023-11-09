@@ -28,7 +28,7 @@ func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHan
 	}
 }
 
-func (h *MetricsHandler) NewMetricsRoutes(router *chi.Mux) {
+func (h *MetricsHandler) NewRoutes(router *chi.Mux) {
 	router.Post("/update/{type}/{name}/{value}", h.update)
 	router.Get("/value/{type}/{name}", h.value)
 	router.Get("/", h.webpage)
@@ -124,7 +124,7 @@ func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *MetricsHandler) webpage(w http.ResponseWriter, r *http.Request) {
+func (h *MetricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFS(&web.Templates, "templates/*.gohtml")
 	if err != nil {
 		h.logger.Error("can't parse template from fs", slog.String("error", err.Error()))
