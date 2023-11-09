@@ -11,6 +11,12 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
 )
 
+const (
+	reportMapSize  = 28
+	minRandomValue = 100
+	maxRandomValue = 100000
+)
+
 func Run(cfg *Config) {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
@@ -37,8 +43,8 @@ func Run(cfg *Config) {
 		Metrics: metrics,
 		Logger:  logger,
 	}
-	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost), slog.Duration("pollInterval", cfg.PollInterval),
-		slog.Duration("reportInterval", cfg.ReportInterval))
+	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost),
+		slog.Duration("pollInterval", cfg.PollInterval), slog.Duration("reportInterval", cfg.ReportInterval))
 
 	for {
 		select {
@@ -66,14 +72,14 @@ type Metrics struct {
 func (ms *Metrics) UpdateMetrics() {
 	runtime.ReadMemStats(&ms.MemStats)
 
-	ms.RandomValue = utils.RandFloat(100, 100000)
+	ms.RandomValue = utils.RandFloat(minRandomValue, maxRandomValue)
 	ms.PollCount++
 
 	log.Println("all metrics updated")
 }
 
 func (ms *Metrics) PrepareGaugeReport() map[string]Gauge {
-	report := make(map[string]Gauge, 28)
+	report := make(map[string]Gauge, reportMapSize)
 
 	report["Alloc"] = Gauge(ms.MemStats.Alloc)
 	report["BuckHashSys"] = Gauge(ms.MemStats.BuckHashSys)
