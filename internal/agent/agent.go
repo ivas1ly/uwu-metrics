@@ -30,10 +30,10 @@ func Run(cfg *Config) {
 		Path:   "/update/",
 	}
 
-	metrics := Metrics{}
+	metrics := &Metrics{}
 	client := Client{
 		URL:     endpoint.String(),
-		Metrics: &metrics,
+		Metrics: metrics,
 		Logger:  logger,
 	}
 	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost), slog.Duration("pollInterval", cfg.PollInterval),
