@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ivas1ly/uwu-metrics/internal/metrics"
+	"github.com/ivas1ly/uwu-metrics/internal/entity"
 )
 
 type Storage interface {
-	Update(metric metrics.Metric) error
+	Update(metric entity.Metric) error
 	GetCounter(name string) (int64, error)
 	GetGauge(name string) (float64, error)
-	GetMetrics() metrics.Metrics
+	GetMetrics() entity.Metrics
 }
 
 type MemStorage struct {
@@ -27,7 +27,7 @@ func NewMemStorage() Storage {
 	}
 }
 
-func (ms *MemStorage) Update(metric metrics.Metric) error {
+func (ms *MemStorage) Update(metric entity.Metric) error {
 	switch metric.Type {
 	case "gauge":
 		value, err := strconv.ParseFloat(metric.Value, 64)
@@ -48,8 +48,8 @@ func (ms *MemStorage) Update(metric metrics.Metric) error {
 	return nil
 }
 
-func (ms *MemStorage) GetMetrics() metrics.Metrics {
-	return metrics.Metrics{Counter: ms.counter, Gauge: ms.gauge}
+func (ms *MemStorage) GetMetrics() entity.Metrics {
+	return entity.Metrics{Counter: ms.counter, Gauge: ms.gauge}
 }
 
 func (ms *MemStorage) GetCounter(name string) (int64, error) {

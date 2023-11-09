@@ -1,4 +1,4 @@
-package metrics
+package entity
 
 type Metric struct {
 	Type  string

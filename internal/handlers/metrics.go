@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/ivas1ly/uwu-metrics/internal/metrics"
+	"github.com/ivas1ly/uwu-metrics/internal/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 	"github.com/ivas1ly/uwu-metrics/web"
 )
@@ -56,7 +56,7 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric := metrics.Metric{
+	metric := entity.Metric{
 		Type:  mType,
 		Name:  mName,
 		Value: mValue,
@@ -65,7 +65,8 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	err := h.storage.Update(metric)
 	if err != nil {
 		h.logger.Error("incorrect metric type or value", slog.String("error", err.Error()))
-		http.Error(w, fmt.Sprintf("incorrect metric type or value; recieved type: %q, value: %q", mType, mValue), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("incorrect metric type or value; "+
+			"recieved type: %q, value: %q", mType, mValue), http.StatusBadRequest)
 		return
 	}
 	h.logger.Info("metric saved", slog.String("metric", fmt.Sprintf("%+v", metric)))

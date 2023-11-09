@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ivas1ly/uwu-metrics/internal/metrics"
+	"github.com/ivas1ly/uwu-metrics/internal/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
@@ -227,7 +227,7 @@ func NewTestStorage() storage.Storage {
 	}
 }
 
-func (ts *TestStorage) Update(metric metrics.Metric) error {
+func (ts *TestStorage) Update(metric entity.Metric) error {
 	switch metric.Type {
 	case "gauge":
 		value, err := strconv.ParseFloat(metric.Value, 64)
@@ -248,8 +248,8 @@ func (ts *TestStorage) Update(metric metrics.Metric) error {
 	return nil
 }
 
-func (ts *TestStorage) GetMetrics() metrics.Metrics {
-	return metrics.Metrics{Counter: ts.counter, Gauge: ts.gauge}
+func (ts *TestStorage) GetMetrics() entity.Metrics {
+	return entity.Metrics{Counter: ts.counter, Gauge: ts.gauge}
 }
 
 func (ts *TestStorage) GetCounter(name string) (int64, error) {
