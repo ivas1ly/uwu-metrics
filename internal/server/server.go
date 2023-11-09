@@ -31,8 +31,17 @@ func Run(cfg *Config) {
 		http.NotFound(w, r)
 	}))
 
+	server := &http.Server{
+		Addr:              cfg.Endpoint,
+		Handler:           router,
+		ReadTimeout:       defaultReadTimeout,
+		ReadHeaderTimeout: defaultReadHeaderTimeout,
+		WriteTimeout:      defaultWriteTimeout,
+		IdleTimeout:       defaultIdleTimeout,
+	}
+
 	log.Printf("server started on %s", cfg.Endpoint)
-	err := http.ListenAndServe(cfg.Endpoint, router)
+	err := server.ListenAndServe()
 	if err != nil {
 		// net/http recovers panic by default
 		panic(err)

@@ -4,11 +4,16 @@ import (
 	"flag"
 	"net"
 	"os"
+	"time"
 )
 
 const (
-	defaultHost = "localhost"
-	defaultPort = "8080"
+	defaultHost              = "localhost"
+	defaultPort              = "8080"
+	defaultReadTimeout       = 10 * time.Second
+	defaultReadHeaderTimeout = 5 * time.Second
+	defaultWriteTimeout      = 10 * time.Second
+	defaultIdleTimeout       = 1 * time.Minute
 )
 
 type Config struct {
