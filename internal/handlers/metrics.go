@@ -64,7 +64,7 @@ func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error("incorrect metric type or value", slog.String("error", err.Error()))
 		http.Error(w, fmt.Sprintf("incorrect metric type or value; "+
-			"recieved type: %q, value: %q", mType, mValue), http.StatusBadRequest)
+			"received type: %q, value: %q", mType, mValue), http.StatusBadRequest)
 		return
 	}
 	h.logger.Info("metric saved", slog.String("metric", fmt.Sprintf("%+v", metric)))
