@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +19,10 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
+)
+
+const (
+	defaultTestClientTimeout = 3 * time.Second
 )
 
 func TestMetricsHandler(t *testing.T) {
@@ -200,7 +206,10 @@ func TestMetricsHandler(t *testing.T) {
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) *http.Response {
-	req, err := http.NewRequest(method, ts.URL+path, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTestClientTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, method, ts.URL+path, nil)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "text/plain")
 

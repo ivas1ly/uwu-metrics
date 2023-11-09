@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -32,7 +33,11 @@ func (c *Client) SendReport() {
 
 func (c *Client) sendRequest(method, path string) error {
 	c.Logger.Debug(c.URL + path)
-	req, err := http.NewRequest(method, c.URL+path, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, method, c.URL+path, nil)
 	if err != nil {
 		c.Logger.Error("can't create new HTTP request", slog.String("error", err.Error()))
 		return err

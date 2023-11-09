@@ -12,6 +12,7 @@ const (
 	defaultPollInterval   = 2
 	defaultReportInterval = 10
 	defaultEndpointHost   = "localhost:8080"
+	defaultClientTimeout  = 3 * time.Second
 )
 
 type Config struct {
