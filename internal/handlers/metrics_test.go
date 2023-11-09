@@ -24,12 +24,7 @@ func TestMetricsHandler(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	router := chi.NewRouter()
 
-	handlers := MetricsHandler{
-		storage: testStorage,
-		logger:  logger,
-	}
-
-	handlers.NewRoutes(router)
+	NewRoutes(router, testStorage, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()

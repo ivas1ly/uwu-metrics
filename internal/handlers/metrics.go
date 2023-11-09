@@ -16,25 +16,23 @@ import (
 	"github.com/ivas1ly/uwu-metrics/web"
 )
 
-type MetricsHandler struct {
+type metricsHandler struct {
 	storage storage.Storage
 	logger  *slog.Logger
 }
 
-func NewMetricsHandler(storage storage.Storage, logger *slog.Logger) *MetricsHandler {
-	return &MetricsHandler{
+func NewRoutes(router *chi.Mux, storage storage.Storage, logger *slog.Logger) {
+	h := &metricsHandler{
 		storage: storage,
 		logger:  logger.With(slog.String("handler", "metrics")),
 	}
-}
 
-func (h *MetricsHandler) NewRoutes(router *chi.Mux) {
 	router.Post("/update/{type}/{name}/{value}", h.update)
 	router.Get("/value/{type}/{name}", h.value)
 	router.Get("/", h.webpage)
 }
 
-func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
+func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
@@ -75,7 +73,7 @@ func (h *MetricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 }
 
-func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
+func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", slog.String("path", r.URL.Path))
@@ -124,7 +122,7 @@ func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *MetricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
+func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFS(&web.Templates, "templates/*.gohtml")
 	if err != nil {
 		h.logger.Error("can't parse template from fs", slog.String("error", err.Error()))
