@@ -3,11 +3,12 @@ package agent
 import (
 	"log"
 	"log/slog"
-	"math/rand"
 	"net/url"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/ivas1ly/uwu-metrics/internal/utils"
 )
 
 func Run(cfg *Config) {
@@ -65,8 +66,8 @@ type Metrics struct {
 func (ms *Metrics) UpdateMetrics() {
 	runtime.ReadMemStats(&ms.MemStats)
 
-	ms.RandomValue = randFloat(10, 100000)
-	ms.PollCount += 1
+	ms.RandomValue = utils.RandFloat(100, 100000)
+	ms.PollCount++
 
 	log.Println("all metrics updated")
 }
@@ -112,8 +113,4 @@ func (ms *Metrics) PrepareCounterReport() map[string]Counter {
 	report["PollCount"] = Counter(ms.PollCount)
 
 	return report
-}
-
-func randFloat(min, max float64) float64 {
-	return min + rand.Float64()*(max-min)
 }
