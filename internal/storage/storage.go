@@ -31,13 +31,13 @@ func NewMemStorage() *memStorage {
 
 func (ms *memStorage) Update(metric entity.Metric) error {
 	switch metric.Type {
-	case "gauge":
+	case entity.GaugeType:
 		value, err := strconv.ParseFloat(metric.Value, 64)
 		if err != nil {
 			return fmt.Errorf("incorrect metric value: %w", err)
 		}
 		ms.gauge[metric.Name] = value
-	case "counter":
+	case entity.CounterType:
 		value, err := strconv.ParseInt(metric.Value, 10, 64)
 		if err != nil {
 			return fmt.Errorf("incorrect metric value: %w", err)

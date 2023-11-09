@@ -89,7 +89,7 @@ func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch mType {
-	case "counter":
+	case entity.CounterType:
 		value, err := h.storage.GetCounter(mName)
 		if err != nil {
 			h.logger.Error("can't get counter value", slog.String("error", err.Error()))
@@ -102,7 +102,7 @@ func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-	case "gauge":
+	case entity.GaugeType:
 		value, err := h.storage.GetGauge(mName)
 		if err != nil {
 			h.logger.Error("can't get gauge value", slog.String("error", err.Error()))
