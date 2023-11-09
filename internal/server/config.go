@@ -2,6 +2,7 @@ package server
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"time"
@@ -23,8 +24,9 @@ type Config struct {
 func NewConfig() *Config {
 	cfg := &Config{}
 
-	flag.StringVar(&cfg.Endpoint, "a", net.JoinHostPort(defaultHost, defaultPort), "HTTP server endpoint, "+
-		"example: 'localhost:8080' or ':8080'")
+	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
+		net.JoinHostPort(defaultHost, defaultPort), net.JoinHostPort("", defaultPort))
+	flag.StringVar(&cfg.Endpoint, "a", net.JoinHostPort(defaultHost, defaultPort), endpointUsage)
 	flag.Parse()
 
 	if endpoint := os.Getenv("ADDRESS"); endpoint != "" {

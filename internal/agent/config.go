@@ -2,6 +2,7 @@ package agent
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -22,12 +23,16 @@ type Config struct {
 func NewConfig() *Config {
 	cfg := &Config{}
 
-	flag.StringVar(&cfg.EndpointHost, "a", defaultEndpointHost, "HTTP server report endpoint, "+
-		"example: 'localhost:8080'")
-	ri := flag.Int("r", defaultReportInterval, "frequency of sending metrics "+
-		"to the server, example: '10'")
-	pi := flag.Int("p", defaultPollInterval, "frequency of polling metrics from "+
-		"the runtime package, example: '2'")
+	endpointHostUsage := fmt.Sprintf("HTTP server report endpoint, example: %q", defaultEndpointHost)
+	flag.StringVar(&cfg.EndpointHost, "a", defaultEndpointHost, endpointHostUsage)
+
+	reportIntervalUsage := fmt.Sprintf("frequency of sending metrics to the server, example: %q",
+		defaultReportInterval)
+	ri := flag.Int("r", defaultReportInterval, reportIntervalUsage)
+
+	pollIntervalUsage := fmt.Sprintf("frequency of polling metrics from the runtime package, example: %q",
+		defaultPollInterval)
+	pi := flag.Int("p", defaultPollInterval, pollIntervalUsage)
 
 	flag.Parse()
 
