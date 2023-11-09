@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"embed"
 	"fmt"
 	"html/template"
 	"log/slog"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/storage"
+	"github.com/ivas1ly/uwu-metrics/web"
 )
 
 type MetricsHandler struct {
@@ -123,11 +123,8 @@ func (h *MetricsHandler) value(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//go:embed templates
-var content embed.FS
-
 func (h *MetricsHandler) webpage(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFS(content, "templates/*.gohtml")
+	t, err := template.ParseFS(&web.Templates, "templates/*.gohtml")
 	if err != nil {
 		h.logger.Error("can't parse template from fs", slog.String("error", err.Error()))
 		http.Error(w, "", http.StatusInternalServerError)
