@@ -8,9 +8,9 @@ import (
 )
 
 type Client struct {
-	URL     string
 	Metrics *Metrics
 	Logger  *slog.Logger
+	URL     string
 }
 
 func (c *Client) SendReport() {

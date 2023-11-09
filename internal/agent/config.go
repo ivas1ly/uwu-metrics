@@ -16,9 +16,9 @@ const (
 )
 
 type Config struct {
+	EndpointHost   string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
-	EndpointHost   string
 }
 
 func NewConfig() *Config {

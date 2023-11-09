@@ -36,8 +36,8 @@ func TestMetricsHandler(t *testing.T) {
 
 	type want struct {
 		contentType string
-		statusCode  int
 		body        string
+		statusCode  int
 	}
 	tests := []struct {
 		name   string
