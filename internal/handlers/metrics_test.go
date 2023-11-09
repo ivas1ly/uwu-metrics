@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ivas1ly/uwu-metrics/internal/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
 const (
@@ -219,19 +218,19 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) *http.R
 	return resp
 }
 
-type TestStorage struct {
+type testStorage struct {
 	gauge   map[string]float64
 	counter map[string]int64
 }
 
-func NewTestStorage() storage.Storage {
-	return &TestStorage{
+func NewTestStorage() *testStorage {
+	return &testStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),
 	}
 }
 
-func (ts *TestStorage) Update(metric entity.Metric) error {
+func (ts *testStorage) Update(metric entity.Metric) error {
 	switch metric.Type {
 	case "gauge":
 		value, err := strconv.ParseFloat(metric.Value, 64)
@@ -252,11 +251,11 @@ func (ts *TestStorage) Update(metric entity.Metric) error {
 	return nil
 }
 
-func (ts *TestStorage) GetMetrics() entity.Metrics {
+func (ts *testStorage) GetMetrics() entity.Metrics {
 	return entity.Metrics{Counter: ts.counter, Gauge: ts.gauge}
 }
 
-func (ts *TestStorage) GetCounter(name string) (int64, error) {
+func (ts *testStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ts.counter[name]
 	if !ok {
 		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
@@ -264,7 +263,7 @@ func (ts *TestStorage) GetCounter(name string) (int64, error) {
 	return counter, nil
 }
 
-func (ts *TestStorage) GetGauge(name string) (float64, error) {
+func (ts *testStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ts.gauge[name]
 	if !ok {
 		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)

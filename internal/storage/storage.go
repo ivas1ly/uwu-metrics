@@ -8,6 +8,8 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/entity"
 )
 
+var _ Storage = (*memStorage)(nil)
+
 type Storage interface {
 	Update(metric entity.Metric) error
 	GetCounter(name string) (int64, error)
@@ -20,7 +22,7 @@ type memStorage struct {
 	counter map[string]int64
 }
 
-func NewMemStorage() Storage {
+func NewMemStorage() *memStorage {
 	return &memStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),
