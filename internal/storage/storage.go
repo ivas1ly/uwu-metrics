@@ -15,19 +15,19 @@ type Storage interface {
 	GetMetrics() entity.Metrics
 }
 
-type MemStorage struct {
+type memStorage struct {
 	gauge   map[string]float64
 	counter map[string]int64
 }
 
 func NewMemStorage() Storage {
-	return &MemStorage{
+	return &memStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),
 	}
 }
 
-func (ms *MemStorage) Update(metric entity.Metric) error {
+func (ms *memStorage) Update(metric entity.Metric) error {
 	switch metric.Type {
 	case "gauge":
 		value, err := strconv.ParseFloat(metric.Value, 64)
@@ -48,11 +48,11 @@ func (ms *MemStorage) Update(metric entity.Metric) error {
 	return nil
 }
 
-func (ms *MemStorage) GetMetrics() entity.Metrics {
+func (ms *memStorage) GetMetrics() entity.Metrics {
 	return entity.Metrics{Counter: ms.counter, Gauge: ms.gauge}
 }
 
-func (ms *MemStorage) GetCounter(name string) (int64, error) {
+func (ms *memStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ms.counter[name]
 	if !ok {
 		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
@@ -60,7 +60,7 @@ func (ms *MemStorage) GetCounter(name string) (int64, error) {
 	return counter, nil
 }
 
-func (ms *MemStorage) GetGauge(name string) (float64, error) {
+func (ms *memStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ms.gauge[name]
 	if !ok {
 		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
