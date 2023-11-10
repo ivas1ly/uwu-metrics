@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ivas1ly/uwu-metrics/internal/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/storage"
 )
 
 const (
@@ -223,7 +224,7 @@ type testStorage struct {
 	counter map[string]int64
 }
 
-func NewTestStorage() *testStorage {
+func NewTestStorage() storage.Storage {
 	return &testStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),

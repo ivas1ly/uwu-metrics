@@ -40,7 +40,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - ireturn
     - lll
     - misspell
     - nakedret

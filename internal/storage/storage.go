@@ -22,7 +22,7 @@ type memStorage struct {
 	counter map[string]int64
 }
 
-func NewMemStorage() *memStorage {
+func NewMemStorage() Storage {
 	return &memStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),
