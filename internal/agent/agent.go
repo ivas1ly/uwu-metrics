@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
@@ -29,9 +31,6 @@ func Run(cfg *Config) {
 	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
 	reportSendTicker := time.NewTicker(cfg.ReportInterval)
 
-	defer metricsUpdateTicker.Stop()
-	defer reportSendTicker.Stop()
-
 	endpoint := url.URL{
 		Scheme: "http",
 		Host:   cfg.EndpointHost,
@@ -47,16 +46,44 @@ func Run(cfg *Config) {
 	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost),
 		slog.Duration("pollInterval", cfg.PollInterval), slog.Duration("reportInterval", cfg.ReportInterval))
 
-	for {
-		select {
-		case mut := <-metricsUpdateTicker.C:
-			logger.Info("[update] metrics updated", slog.Time("updated at", mut))
-			metrics.UpdateMetrics()
-		case rst := <-reportSendTicker.C:
-			logger.Info("[report] metrics sent to server", slog.Time("sent at", rst))
-			client.SendReport()
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+
+	done := make(chan bool)
+
+	go func() {
+		defer func() {
+			done <- true
+		}()
+		for {
+			select {
+			case mut := <-metricsUpdateTicker.C:
+				logger.Info("[update] metrics updated", slog.Time("updated at", mut))
+				metrics.UpdateMetrics()
+			case rst := <-reportSendTicker.C:
+				logger.Info("[report] metrics sent to server", slog.Time("sent at", rst))
+				client.SendReport()
+			case <-done:
+				logger.Info("all tickers have been stopped")
+				return
+			}
 		}
-	}
+	}()
+
+	// block until signal is received
+	sig := <-c
+	logger.Warn("app got os signal", slog.String("signal", sig.String()))
+	logger.Info("gracefully shutting down...")
+	reportSendTicker.Stop()
+	metricsUpdateTicker.Stop()
+
+	// stop goroutine
+	done <- true
+
+	// wait until done
+	<-done
+
+	logger.Info("shutdown successfully")
 }
 
 type Metrics struct {
