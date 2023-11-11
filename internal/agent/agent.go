@@ -20,7 +20,7 @@ const (
 
 func Run(cfg *Config) {
 	opts := &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: defaultLogLevel,
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, opts)).
 		With(slog.String("app", "agent"))
