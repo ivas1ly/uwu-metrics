@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ivas1ly/uwu-metrics/internal/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/storage"
+	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
 )
 
 const (

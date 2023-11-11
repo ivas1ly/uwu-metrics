@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ivas1ly/uwu-metrics/internal/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 )
 
 var _ Storage = (*memStorage)(nil)

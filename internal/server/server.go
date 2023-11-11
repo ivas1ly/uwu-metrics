@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/ivas1ly/uwu-metrics/internal/handlers"
-	"github.com/ivas1ly/uwu-metrics/internal/storage"
+	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
 )
 
 func Run(cfg *Config) {
