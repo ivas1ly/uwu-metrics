@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
 )
 
@@ -58,9 +59,6 @@ func Run(cfg *Config) {
 	}
 }
 
-type Gauge float64
-type Counter int64
-
 type Metrics struct {
 	// Gauge
 	MemStats    runtime.MemStats
@@ -78,45 +76,45 @@ func (ms *Metrics) UpdateMetrics() {
 	log.Println("all metrics updated")
 }
 
-func (ms *Metrics) PrepareGaugeReport() map[string]Gauge {
-	report := make(map[string]Gauge, reportMapSize)
+func (ms *Metrics) PrepareGaugeReport() map[string]entity.Gauge {
+	report := make(map[string]entity.Gauge, reportMapSize)
 
-	report["Alloc"] = Gauge(ms.MemStats.Alloc)
-	report["BuckHashSys"] = Gauge(ms.MemStats.BuckHashSys)
-	report["Frees"] = Gauge(ms.MemStats.Frees)
-	report["GCCPUFraction"] = Gauge(ms.MemStats.GCCPUFraction)
-	report["GCSys"] = Gauge(ms.MemStats.GCSys)
-	report["HeapAlloc"] = Gauge(ms.MemStats.HeapAlloc)
-	report["HeapIdle"] = Gauge(ms.MemStats.HeapIdle)
-	report["HeapInuse"] = Gauge(ms.MemStats.HeapInuse)
-	report["HeapObjects"] = Gauge(ms.MemStats.HeapObjects)
-	report["HeapReleased"] = Gauge(ms.MemStats.HeapReleased)
-	report["HeapSys"] = Gauge(ms.MemStats.HeapSys)
-	report["LastGC"] = Gauge(ms.MemStats.LastGC)
-	report["Lookups"] = Gauge(ms.MemStats.Lookups)
-	report["MCacheInuse"] = Gauge(ms.MemStats.MCacheInuse)
-	report["MCacheSys"] = Gauge(ms.MemStats.MCacheSys)
-	report["MSpanInuse"] = Gauge(ms.MemStats.MSpanInuse)
-	report["MSpanSys"] = Gauge(ms.MemStats.MSpanSys)
-	report["Mallocs"] = Gauge(ms.MemStats.Mallocs)
-	report["NextGC"] = Gauge(ms.MemStats.NextGC)
-	report["NumForcedGC"] = Gauge(ms.MemStats.NumForcedGC)
-	report["NumGC"] = Gauge(ms.MemStats.NumGC)
-	report["OtherSys"] = Gauge(ms.MemStats.OtherSys)
-	report["PauseTotalNs"] = Gauge(ms.MemStats.PauseTotalNs)
-	report["StackInuse"] = Gauge(ms.MemStats.StackInuse)
-	report["StackSys"] = Gauge(ms.MemStats.StackSys)
-	report["Sys"] = Gauge(ms.MemStats.Sys)
-	report["TotalAlloc"] = Gauge(ms.MemStats.TotalAlloc)
+	report["Alloc"] = entity.Gauge(ms.MemStats.Alloc)
+	report["BuckHashSys"] = entity.Gauge(ms.MemStats.BuckHashSys)
+	report["Frees"] = entity.Gauge(ms.MemStats.Frees)
+	report["GCCPUFraction"] = entity.Gauge(ms.MemStats.GCCPUFraction)
+	report["GCSys"] = entity.Gauge(ms.MemStats.GCSys)
+	report["HeapAlloc"] = entity.Gauge(ms.MemStats.HeapAlloc)
+	report["HeapIdle"] = entity.Gauge(ms.MemStats.HeapIdle)
+	report["HeapInuse"] = entity.Gauge(ms.MemStats.HeapInuse)
+	report["HeapObjects"] = entity.Gauge(ms.MemStats.HeapObjects)
+	report["HeapReleased"] = entity.Gauge(ms.MemStats.HeapReleased)
+	report["HeapSys"] = entity.Gauge(ms.MemStats.HeapSys)
+	report["LastGC"] = entity.Gauge(ms.MemStats.LastGC)
+	report["Lookups"] = entity.Gauge(ms.MemStats.Lookups)
+	report["MCacheInuse"] = entity.Gauge(ms.MemStats.MCacheInuse)
+	report["MCacheSys"] = entity.Gauge(ms.MemStats.MCacheSys)
+	report["MSpanInuse"] = entity.Gauge(ms.MemStats.MSpanInuse)
+	report["MSpanSys"] = entity.Gauge(ms.MemStats.MSpanSys)
+	report["Mallocs"] = entity.Gauge(ms.MemStats.Mallocs)
+	report["NextGC"] = entity.Gauge(ms.MemStats.NextGC)
+	report["NumForcedGC"] = entity.Gauge(ms.MemStats.NumForcedGC)
+	report["NumGC"] = entity.Gauge(ms.MemStats.NumGC)
+	report["OtherSys"] = entity.Gauge(ms.MemStats.OtherSys)
+	report["PauseTotalNs"] = entity.Gauge(ms.MemStats.PauseTotalNs)
+	report["StackInuse"] = entity.Gauge(ms.MemStats.StackInuse)
+	report["StackSys"] = entity.Gauge(ms.MemStats.StackSys)
+	report["Sys"] = entity.Gauge(ms.MemStats.Sys)
+	report["TotalAlloc"] = entity.Gauge(ms.MemStats.TotalAlloc)
 
-	report["RandomValue"] = Gauge(ms.RandomValue)
+	report["RandomValue"] = entity.Gauge(ms.RandomValue)
 
 	return report
 }
 
-func (ms *Metrics) PrepareCounterReport() map[string]Counter {
-	report := make(map[string]Counter, 1)
-	report["PollCount"] = Counter(ms.PollCount)
+func (ms *Metrics) PrepareCounterReport() map[string]entity.Counter {
+	report := make(map[string]entity.Counter, 1)
+	report["PollCount"] = entity.Counter(ms.PollCount)
 
 	return report
 }
