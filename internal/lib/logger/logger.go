@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"log"
 	"strings"
 
 	"go.uber.org/zap"
@@ -42,7 +43,12 @@ func New(level string) *zap.Logger {
 	}
 
 	logger := zap.Must(zapConfig.Build())
-	defer logger.Sync()
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	zap.ReplaceGlobals(logger)
 
