@@ -8,6 +8,7 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
 )
 
@@ -17,6 +18,7 @@ func Run(cfg *Config) {
 
 	memStorage := storage.NewMemStorage()
 	router := chi.NewRouter()
+	router.Use(reqlogger.New(log))
 	handlers.NewRoutes(router, memStorage, log)
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

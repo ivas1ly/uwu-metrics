@@ -71,6 +71,7 @@ func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
@@ -120,6 +121,9 @@ func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
