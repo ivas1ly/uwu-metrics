@@ -6,9 +6,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
+	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
-	"github.com/ivas1ly/uwu-metrics/pkg/logger"
 )
 
 func Run(cfg *Config) {

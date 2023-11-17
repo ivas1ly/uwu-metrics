@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
-	"github.com/ivas1ly/uwu-metrics/pkg/logger"
 )
 
 const (
