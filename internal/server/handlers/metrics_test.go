@@ -5,10 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -16,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
@@ -27,7 +26,7 @@ const (
 
 func TestMetricsHandler(t *testing.T) {
 	testStorage := NewTestStorage()
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
 
 	NewRoutes(router, testStorage, logger)

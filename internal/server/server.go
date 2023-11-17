@@ -1,31 +1,26 @@
 package server
 
 import (
-	"log"
-	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
+	"github.com/ivas1ly/uwu-metrics/pkg/logger"
 )
 
 func Run(cfg *Config) {
-	opts := &slog.HandlerOptions{
-		Level: defaultLogLevel,
-	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, opts)).
-		With(slog.String("app", "server"))
-	slog.SetDefault(logger)
+	log := logger.New(defaultLogLevel).
+		With(zap.String("app", "server"))
 
 	memStorage := storage.NewMemStorage()
 	router := chi.NewRouter()
-	handlers.NewRoutes(router, memStorage, logger)
+	handlers.NewRoutes(router, memStorage, log)
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("route not found :(", slog.String("path", r.URL.Path))
+		log.Info("route not found :(", zap.String("path", r.URL.Path))
 		http.NotFound(w, r)
 	}))
 
@@ -38,7 +33,7 @@ func Run(cfg *Config) {
 		IdleTimeout:       defaultIdleTimeout,
 	}
 
-	log.Printf("server started on %s", cfg.Endpoint)
+	log.Info("server started", zap.String("addr", cfg.Endpoint))
 	err := server.ListenAndServe()
 	if err != nil {
 		// net/http recovers panic by default

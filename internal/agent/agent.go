@@ -1,8 +1,6 @@
 package agent
 
 import (
-	"log"
-	"log/slog"
 	"net/url"
 	"os"
 	"os/signal"
@@ -10,8 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
+	"github.com/ivas1ly/uwu-metrics/pkg/logger"
 )
 
 const (
@@ -21,12 +22,8 @@ const (
 )
 
 func Run(cfg *Config) {
-	opts := &slog.HandlerOptions{
-		Level: defaultLogLevel,
-	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, opts)).
-		With(slog.String("app", "agent"))
-	slog.SetDefault(logger)
+	log := logger.New(defaultLogLevel).
+		With(zap.String("app", "agent"))
 
 	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
 	reportSendTicker := time.NewTicker(cfg.ReportInterval)
@@ -41,10 +38,10 @@ func Run(cfg *Config) {
 	client := Client{
 		URL:     endpoint.String(),
 		Metrics: metrics,
-		Logger:  logger,
+		Logger:  log,
 	}
-	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost),
-		slog.Duration("pollInterval", cfg.PollInterval), slog.Duration("reportInterval", cfg.ReportInterval))
+	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
+		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
@@ -58,13 +55,13 @@ func Run(cfg *Config) {
 		for {
 			select {
 			case mut := <-metricsUpdateTicker.C:
-				logger.Info("[update] metrics updated", slog.Time("updated at", mut))
+				log.Info("[update] metrics updated", zap.Time("updated at", mut))
 				metrics.UpdateMetrics()
 			case rst := <-reportSendTicker.C:
-				logger.Info("[report] metrics sent to server", slog.Time("sent at", rst))
+				log.Info("[report] metrics sent to server", zap.Time("sent at", rst))
 				client.SendReport()
 			case <-done:
-				logger.Info("all tickers have been stopped")
+				log.Info("all tickers have been stopped")
 				return
 			}
 		}
@@ -72,8 +69,8 @@ func Run(cfg *Config) {
 
 	// block until signal is received
 	sig := <-c
-	logger.Warn("app got os signal", slog.String("signal", sig.String()))
-	logger.Info("gracefully shutting down...")
+	log.Warn("app got os signal", zap.String("signal", sig.String()))
+	log.Info("gracefully shutting down...")
 	reportSendTicker.Stop()
 	metricsUpdateTicker.Stop()
 
@@ -83,7 +80,7 @@ func Run(cfg *Config) {
 	// wait until done
 	<-done
 
-	logger.Info("shutdown successfully")
+	log.Info("shutdown successfully")
 }
 
 type Metrics struct {
@@ -100,7 +97,7 @@ func (ms *Metrics) UpdateMetrics() {
 	ms.RandomValue = utils.RandFloat(minRandomValue, maxRandomValue)
 	ms.PollCount++
 
-	log.Println("all metrics updated")
+	zap.L().Info("all metrics updated")
 }
 
 func (ms *Metrics) PrepareGaugeReport() map[string]entity.Gauge {

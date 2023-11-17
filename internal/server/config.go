@@ -3,7 +3,6 @@ package server
 import (
 	"flag"
 	"fmt"
-	"log/slog"
 	"net"
 	"os"
 	"time"
@@ -16,7 +15,7 @@ const (
 	defaultReadHeaderTimeout = 5 * time.Second
 	defaultWriteTimeout      = 10 * time.Second
 	defaultIdleTimeout       = 1 * time.Minute
-	defaultLogLevel          = slog.LevelDebug
+	defaultLogLevel          = "info"
 )
 
 type Config struct {
