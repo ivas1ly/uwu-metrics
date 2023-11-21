@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
@@ -230,25 +228,12 @@ func NewTestStorage() storage.Storage {
 	}
 }
 
-func (ts *testStorage) Update(metric entity.Metric) error {
-	switch metric.Type {
-	case "gauge":
-		value, err := strconv.ParseFloat(metric.Value, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ts.gauge[metric.Name] = value
-	case "counter":
-		value, err := strconv.ParseInt(metric.Value, 10, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ts.counter[metric.Name] += value
-	default:
-		return errors.New("unknown metric type")
-	}
+func (ts *testStorage) UpdateGauge(name string, value float64) {
+	ts.gauge[name] = value
+}
 
-	return nil
+func (ts *testStorage) UpdateCounter(name string, value int64) {
+	ts.counter[name] += value
 }
 
 func (ts *testStorage) GetMetrics() entity.Metrics {

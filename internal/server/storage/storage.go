@@ -1,9 +1,7 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 )
@@ -11,7 +9,8 @@ import (
 var _ Storage = (*memStorage)(nil)
 
 type Storage interface {
-	Update(metric entity.Metric) error
+	UpdateCounter(name string, value int64)
+	UpdateGauge(name string, value float64)
 	GetCounter(name string) (int64, error)
 	GetGauge(name string) (float64, error)
 	GetMetrics() entity.Metrics
@@ -29,25 +28,12 @@ func NewMemStorage() Storage {
 	}
 }
 
-func (ms *memStorage) Update(metric entity.Metric) error {
-	switch metric.Type {
-	case entity.GaugeType:
-		value, err := strconv.ParseFloat(metric.Value, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ms.gauge[metric.Name] = value
-	case entity.CounterType:
-		value, err := strconv.ParseInt(metric.Value, 10, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ms.counter[metric.Name] += value
-	default:
-		return errors.New("unknown metric type")
-	}
+func (ms *memStorage) UpdateGauge(name string, value float64) {
+	ms.gauge[name] = value
+}
 
-	return nil
+func (ms *memStorage) UpdateCounter(name string, value int64) {
+	ms.counter[name] += value
 }
 
 func (ms *memStorage) GetMetrics() entity.Metrics {

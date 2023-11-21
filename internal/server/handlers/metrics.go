@@ -16,6 +16,11 @@ import (
 	"github.com/ivas1ly/uwu-metrics/web"
 )
 
+const (
+	IncorrectMetricValueMsg = "incorrect metric value"
+	UnknownMetricTypeMsg    = "unknown metric type"
+)
+
 type metricsHandler struct {
 	storage storage.Storage
 	logger  *zap.Logger
@@ -58,20 +63,33 @@ func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metric := entity.Metric{
-		Type:  mType,
-		Name:  mName,
-		Value: mValue,
-	}
-
-	err := h.storage.Update(metric)
-	if err != nil {
-		h.logger.Error("incorrect metric type or value", zap.String("error", err.Error()))
-		http.Error(w, fmt.Sprintf("incorrect metric type or value; "+
-			"received type: %q, value: %q", mType, mValue), http.StatusBadRequest)
+	switch mType {
+	case entity.GaugeType:
+		value, err := strconv.ParseFloat(mValue, 64)
+		if err != nil {
+			h.logger.Error(IncorrectMetricValueMsg, zap.String("error", err.Error()))
+			http.Error(w, fmt.Sprintf("%s %q", IncorrectMetricValueMsg, mValue), http.StatusBadRequest)
+			return
+		}
+		h.storage.UpdateGauge(mName, value)
+	case entity.CounterType:
+		value, err := strconv.ParseInt(mValue, 10, 64)
+		if err != nil {
+			h.logger.Error(IncorrectMetricValueMsg, zap.String("error", err.Error()))
+			http.Error(w, fmt.Sprintf("%s %q", IncorrectMetricValueMsg, mValue), http.StatusBadRequest)
+			return
+		}
+		h.storage.UpdateCounter(mName, value)
+	default:
+		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", mType))
+		http.Error(w, fmt.Sprintf("%s %q", UnknownMetricTypeMsg, mType), http.StatusBadRequest)
 		return
 	}
-	h.logger.Info("metric saved", zap.String("metric", fmt.Sprintf("%+v", metric)))
+
+	h.logger.Info("metric saved",
+		zap.String("type", mType),
+		zap.String("name", mName),
+		zap.String("value", mValue))
 	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -121,7 +139,7 @@ func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	default:
-		h.logger.Error("unknown metric type", zap.String("type", mType))
+		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", mType))
 		http.NotFound(w, r)
 		return
 	}
