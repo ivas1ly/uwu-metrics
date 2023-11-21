@@ -1,32 +1,33 @@
 .DEFAULT_GOAL := build
 
+.PHONY:clean
 clean:
 	-rm -f ./cmd/agent/agent
 	-rm -f ./cmd/server/server
-.PHONY:clean
 
+.PHONY:statictest
 statictest:
 	go vet -vettool=$$(which statictest) ./...
-.PHONY:statictest
 
+.PHONY:iter1
 iter1: statictest build
 	metricstest -test.v -test.run=TestIteration1$$ \
 				-binary-path=cmd/server/server
-.PHONY:iter1
 
+.PHONY:iter2
 iter2: iter1
 	metricstest -test.v -test.run=^TestIteration2[AB]*$$ \
                 -source-path=. \
                 -agent-binary-path=cmd/agent/agent
-.PHONY:iter2
 
+.PHONY:iter3
 iter3: iter2
 	metricstest -test.v -test.run=^TestIteration3[AB]*$$ \
                 -source-path=. \
                 -agent-binary-path=cmd/agent/agent \
                 -binary-path=cmd/server/server
-.PHONY:iter3
 
+.PHONY:iter4
 iter4: iter3
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -36,8 +37,8 @@ iter4: iter3
 				-binary-path=cmd/server/server \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter4
 
+.PHONY:iter5
 iter5: iter4
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -47,8 +48,8 @@ iter5: iter4
 				-binary-path=cmd/server/server \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter5
 
+.PHONY:iter6
 iter6: iter5
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -58,8 +59,8 @@ iter6: iter5
 				-binary-path=cmd/server/server \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter6
 
+.PHONY:iter7
 iter7: iter6
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -69,8 +70,8 @@ iter7: iter6
 				-binary-path=cmd/server/server \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter7
 
+.PHONY:iter8
 iter8: iter7
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -80,8 +81,8 @@ iter8: iter7
 				-binary-path=cmd/server/server \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter8
 
+.PHONY:iter9
 iter9: iter8
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -92,8 +93,8 @@ iter9: iter8
 				-file-storage-path=$$TEMP_FILE \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter9
 
+.PHONY:iter10
 iter10: iter9
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -104,8 +105,8 @@ iter10: iter9
 				-database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter10
 
+.PHONY:iter11
 iter11: iter10
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -116,8 +117,8 @@ iter11: iter10
 				-database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter11
 
+.PHONY:iter12
 iter12: iter11
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -128,8 +129,8 @@ iter12: iter11
 				-database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter12
 
+.PHONY:iter13
 iter13: iter12
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -140,8 +141,8 @@ iter13: iter12
 				-database-dsn='postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable' \
 				-server-port=$$SERVER_PORT \
 				-source-path=.
-.PHONY:iter13
 
+.PHONY:iter14
 iter14: iter13
 	SERVER_PORT=$$(random unused-port) ; \
 	ADDRESS="localhost:$${SERVER_PORT}" ; \
@@ -154,9 +155,12 @@ iter14: iter13
 				-server-port=$$SERVER_PORT \
 				-source-path=. ;\
 	go test -v -race ./...
-.PHONY:iter14
 
+.PHONY:build
 build:
 	go build -C ./cmd/agent/ -o agent
 	go build -C ./cmd/server/ -o server
-.PHONY:build
+
+.PHONY:lint
+lint:
+	golangci-lint run -v
