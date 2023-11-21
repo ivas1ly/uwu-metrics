@@ -27,9 +27,13 @@ func NewRoutes(router *chi.Mux, storage storage.Storage, logger *zap.Logger) {
 		logger:  logger.With(zap.String("handler", "metrics")),
 	}
 
-	router.Post("/update/{type}/{name}/{value}", h.update)
-	router.Get("/value/{type}/{name}", h.value)
 	router.Get("/", h.webpage)
+	router.Route("/update", func(r chi.Router) {
+		r.Post("/{type}/{name}/{value}", h.update)
+	})
+	router.Route("/value", func(r chi.Router) {
+		r.Get("/{type}/{name}", h.value)
+	})
 }
 
 func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
