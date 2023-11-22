@@ -43,7 +43,7 @@ func (ms *memStorage) GetMetrics() entity.Metrics {
 func (ms *memStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ms.counter[name]
 	if !ok {
-		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+		return 0, fmt.Errorf("counter metric %q doesn't exist", name)
 	}
 	return counter, nil
 }
@@ -51,7 +51,7 @@ func (ms *memStorage) GetCounter(name string) (int64, error) {
 func (ms *memStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ms.gauge[name]
 	if !ok {
-		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+		return 0, fmt.Errorf("gauge metric %q doesn't exist", name)
 	}
 	return gauge, nil
 }

@@ -1,14 +1,18 @@
 package handlers
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
@@ -19,6 +23,7 @@ import (
 const (
 	IncorrectMetricValueMsg = "incorrect metric value"
 	UnknownMetricTypeMsg    = "unknown metric type"
+	EmptyMetricValueMsg     = "empty metric value"
 )
 
 type metricsHandler struct {
@@ -34,14 +39,16 @@ func NewRoutes(router *chi.Mux, storage storage.Storage, logger *zap.Logger) {
 
 	router.Get("/", h.webpage)
 	router.Route("/update", func(r chi.Router) {
-		r.Post("/{type}/{name}/{value}", h.update)
+		r.Post("/", h.updateJSON)
+		r.Post("/{type}/{name}/{value}", h.updateURL)
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.Get("/{type}/{name}", h.value)
+		r.Post("/", h.valueJSON)
+		r.Get("/{type}/{name}", h.valueURL)
 	})
 }
 
-func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
+func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
@@ -96,7 +103,7 @@ func (h *metricsHandler) update(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *metricsHandler) value(w http.ResponseWriter, r *http.Request) {
+func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
@@ -170,4 +177,165 @@ func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+}
+
+type Metrics struct {
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+	ID    string   `json:"id"`
+	MType string   `json:"type"`
+}
+
+func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
+	var request Metrics
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if errors.Is(err, io.EOF) {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "empty request body"})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "can't parse request body"})
+		return
+	}
+
+	errMsg, ok := checkRequestFields(request)
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": strings.Join(errMsg, ", ")})
+		return
+	}
+
+	switch request.MType {
+	case entity.GaugeType:
+		if request.Value == nil {
+			h.logger.Error(EmptyMetricValueMsg, zap.String("type", request.MType))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, request.MType)})
+			return
+		}
+		h.storage.UpdateGauge(request.ID, *request.Value)
+
+		value, err := h.storage.GetGauge(request.ID)
+		if err != nil {
+			h.logger.Error("can't get updated value", zap.String("type", request.MType),
+				zap.String("name", request.ID))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		render.JSON(w, r, Metrics{
+			Delta: nil,
+			Value: &value,
+			ID:    request.ID,
+			MType: request.MType,
+		})
+	case entity.CounterType:
+		if request.Delta == nil {
+			h.logger.Error(EmptyMetricValueMsg, zap.String("type", request.MType))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, request.MType)})
+			return
+		}
+		h.storage.UpdateCounter(request.ID, *request.Delta)
+
+		value, err := h.storage.GetCounter(request.ID)
+		if err != nil {
+			h.logger.Error("can't get updated value", zap.String("type", request.MType),
+				zap.String("name", request.ID))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		render.JSON(w, r, Metrics{
+			Delta: &value,
+			Value: nil,
+			ID:    request.ID,
+			MType: request.MType,
+		})
+	default:
+		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", request.MType))
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, request.MType)})
+		return
+	}
+
+	h.logger.Info("metric saved",
+		zap.String("type", request.MType),
+		zap.String("name", request.ID))
+	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
+}
+
+func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
+	var request Metrics
+
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if errors.Is(err, io.EOF) {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "empty request body"})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "can't parse request body"})
+		return
+	}
+
+	errMsg, ok := checkRequestFields(request)
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": strings.Join(errMsg, ", ")})
+		return
+	}
+
+	switch request.MType {
+	case entity.GaugeType:
+		value, err := h.storage.GetGauge(request.ID)
+		if err != nil {
+			h.logger.Error(err.Error(), zap.String("type", request.MType))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, render.M{"message": err.Error()})
+			return
+		}
+
+		render.JSON(w, r, Metrics{
+			Delta: nil,
+			Value: &value,
+			ID:    request.ID,
+			MType: request.MType,
+		})
+	case entity.CounterType:
+		value, err := h.storage.GetCounter(request.ID)
+		if err != nil {
+			h.logger.Error(err.Error(), zap.String("type", request.MType))
+			w.WriteHeader(http.StatusNotFound)
+			render.JSON(w, r, render.M{"message": err.Error()})
+			return
+		}
+
+		render.JSON(w, r, Metrics{
+			Delta: &value,
+			Value: nil,
+			ID:    request.ID,
+			MType: request.MType,
+		})
+	}
+}
+
+func checkRequestFields(request Metrics) ([]string, bool) {
+	var errMsg []string
+
+	if strings.TrimSpace(request.MType) == "" {
+		errMsg = append(errMsg, fmt.Sprintf("field %q is required", "type"))
+	}
+	if strings.TrimSpace(request.ID) == "" {
+		errMsg = append(errMsg, fmt.Sprintf("field %q is required", "id"))
+	}
+	if len(errMsg) > 0 {
+		return errMsg, false
+	}
+
+	return nil, true
 }
