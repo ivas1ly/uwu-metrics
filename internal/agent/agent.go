@@ -10,7 +10,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
 )
@@ -100,45 +99,45 @@ func (ms *Metrics) UpdateMetrics() {
 	zap.L().Info("all metrics updated")
 }
 
-func (ms *Metrics) PrepareGaugeReport() map[string]entity.Gauge {
-	report := make(map[string]entity.Gauge, reportMapSize)
+func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
+	report := make(map[string]float64, reportMapSize)
 
-	report["Alloc"] = entity.Gauge(ms.MemStats.Alloc)
-	report["BuckHashSys"] = entity.Gauge(ms.MemStats.BuckHashSys)
-	report["Frees"] = entity.Gauge(ms.MemStats.Frees)
-	report["GCCPUFraction"] = entity.Gauge(ms.MemStats.GCCPUFraction)
-	report["GCSys"] = entity.Gauge(ms.MemStats.GCSys)
-	report["HeapAlloc"] = entity.Gauge(ms.MemStats.HeapAlloc)
-	report["HeapIdle"] = entity.Gauge(ms.MemStats.HeapIdle)
-	report["HeapInuse"] = entity.Gauge(ms.MemStats.HeapInuse)
-	report["HeapObjects"] = entity.Gauge(ms.MemStats.HeapObjects)
-	report["HeapReleased"] = entity.Gauge(ms.MemStats.HeapReleased)
-	report["HeapSys"] = entity.Gauge(ms.MemStats.HeapSys)
-	report["LastGC"] = entity.Gauge(ms.MemStats.LastGC)
-	report["Lookups"] = entity.Gauge(ms.MemStats.Lookups)
-	report["MCacheInuse"] = entity.Gauge(ms.MemStats.MCacheInuse)
-	report["MCacheSys"] = entity.Gauge(ms.MemStats.MCacheSys)
-	report["MSpanInuse"] = entity.Gauge(ms.MemStats.MSpanInuse)
-	report["MSpanSys"] = entity.Gauge(ms.MemStats.MSpanSys)
-	report["Mallocs"] = entity.Gauge(ms.MemStats.Mallocs)
-	report["NextGC"] = entity.Gauge(ms.MemStats.NextGC)
-	report["NumForcedGC"] = entity.Gauge(ms.MemStats.NumForcedGC)
-	report["NumGC"] = entity.Gauge(ms.MemStats.NumGC)
-	report["OtherSys"] = entity.Gauge(ms.MemStats.OtherSys)
-	report["PauseTotalNs"] = entity.Gauge(ms.MemStats.PauseTotalNs)
-	report["StackInuse"] = entity.Gauge(ms.MemStats.StackInuse)
-	report["StackSys"] = entity.Gauge(ms.MemStats.StackSys)
-	report["Sys"] = entity.Gauge(ms.MemStats.Sys)
-	report["TotalAlloc"] = entity.Gauge(ms.MemStats.TotalAlloc)
+	report["Alloc"] = float64(ms.MemStats.Alloc)
+	report["BuckHashSys"] = float64(ms.MemStats.BuckHashSys)
+	report["Frees"] = float64(ms.MemStats.Frees)
+	report["GCCPUFraction"] = ms.MemStats.GCCPUFraction
+	report["GCSys"] = float64(ms.MemStats.GCSys)
+	report["HeapAlloc"] = float64(ms.MemStats.HeapAlloc)
+	report["HeapIdle"] = float64(ms.MemStats.HeapIdle)
+	report["HeapInuse"] = float64(ms.MemStats.HeapInuse)
+	report["HeapObjects"] = float64(ms.MemStats.HeapObjects)
+	report["HeapReleased"] = float64(ms.MemStats.HeapReleased)
+	report["HeapSys"] = float64(ms.MemStats.HeapSys)
+	report["LastGC"] = float64(ms.MemStats.LastGC)
+	report["Lookups"] = float64(ms.MemStats.Lookups)
+	report["MCacheInuse"] = float64(ms.MemStats.MCacheInuse)
+	report["MCacheSys"] = float64(ms.MemStats.MCacheSys)
+	report["MSpanInuse"] = float64(ms.MemStats.MSpanInuse)
+	report["MSpanSys"] = float64(ms.MemStats.MSpanSys)
+	report["Mallocs"] = float64(ms.MemStats.Mallocs)
+	report["NextGC"] = float64(ms.MemStats.NextGC)
+	report["NumForcedGC"] = float64(ms.MemStats.NumForcedGC)
+	report["NumGC"] = float64(ms.MemStats.NumGC)
+	report["OtherSys"] = float64(ms.MemStats.OtherSys)
+	report["PauseTotalNs"] = float64(ms.MemStats.PauseTotalNs)
+	report["StackInuse"] = float64(ms.MemStats.StackInuse)
+	report["StackSys"] = float64(ms.MemStats.StackSys)
+	report["Sys"] = float64(ms.MemStats.Sys)
+	report["TotalAlloc"] = float64(ms.MemStats.TotalAlloc)
 
-	report["RandomValue"] = entity.Gauge(ms.RandomValue)
+	report["RandomValue"] = ms.RandomValue
 
 	return report
 }
 
-func (ms *Metrics) PrepareCounterReport() map[string]entity.Counter {
-	report := make(map[string]entity.Counter, 1)
-	report["PollCount"] = entity.Counter(ms.PollCount)
+func (ms *Metrics) PrepareCounterReport() map[string]int64 {
+	report := make(map[string]int64, 1)
+	report["PollCount"] = ms.PollCount
 
 	return report
 }
