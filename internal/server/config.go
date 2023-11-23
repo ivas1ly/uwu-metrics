@@ -15,6 +15,7 @@ const (
 	defaultReadHeaderTimeout = 5 * time.Second
 	defaultWriteTimeout      = 10 * time.Second
 	defaultIdleTimeout       = 1 * time.Minute
+	defaultCompressLevel     = 5
 	defaultLogLevel          = "info"
 )
 

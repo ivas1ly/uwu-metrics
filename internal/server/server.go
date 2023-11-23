@@ -4,10 +4,12 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
 )
@@ -18,7 +20,10 @@ func Run(cfg *Config) {
 
 	memStorage := storage.NewMemStorage()
 	router := chi.NewRouter()
+	router.Use(middleware.Compress(defaultCompressLevel))
+	router.Use(decompress.New(log))
 	router.Use(reqlogger.New(log))
+
 	handlers.NewRoutes(router, memStorage, log)
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

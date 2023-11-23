@@ -39,16 +39,18 @@ func NewRoutes(router *chi.Mux, storage storage.Storage, logger *zap.Logger) {
 
 	router.Get("/", h.webpage)
 	router.Route("/update", func(r chi.Router) {
-		r.Post("/", h.updateJSON)
+		r.With(render.SetContentType(render.ContentTypeJSON)).Post("/", h.updateJSON)
 		r.Post("/{type}/{name}/{value}", h.updateURL)
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.Post("/", h.valueJSON)
+		r.With(render.SetContentType(render.ContentTypeJSON)).Post("/", h.valueJSON)
 		r.Get("/{type}/{name}", h.valueURL)
 	})
 }
 
 func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
@@ -99,11 +101,12 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 		zap.String("value", mValue))
 	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
 		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
@@ -151,7 +154,6 @@ func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -171,6 +173,7 @@ func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 		"Counter": m.Counter,
 	}
 
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = t.ExecuteTemplate(w, "index.gohtml", viewMap)
 	if err != nil {
 		h.logger.Error("can't execute template", zap.String("error", err.Error()))
