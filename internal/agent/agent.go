@@ -34,6 +34,7 @@ func Run(cfg *Config) {
 	}
 
 	metrics := &Metrics{}
+
 	client := Client{
 		URL:     endpoint.String(),
 		Metrics: metrics,
