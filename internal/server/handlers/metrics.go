@@ -39,11 +39,11 @@ func NewRoutes(router *chi.Mux, storage memory.Storage, logger *zap.Logger) {
 
 	router.Get("/", h.webpage)
 	router.Route("/update", func(r chi.Router) {
-		r.With(render.SetContentType(render.ContentTypeJSON)).Post("/", h.updateJSON)
+		r.Post("/", h.updateJSON)
 		r.Post("/{type}/{name}/{value}", h.updateURL)
 	})
 	router.Route("/value", func(r chi.Router) {
-		r.With(render.SetContentType(render.ContentTypeJSON)).Post("/", h.valueJSON)
+		r.Post("/", h.valueJSON)
 		r.Get("/{type}/{name}", h.valueURL)
 	})
 }
@@ -66,11 +66,6 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mValue := chi.URLParam(r, "value")
-	if mValue == "" {
-		h.logger.Error("can't get metric value", zap.String("value", mValue))
-		http.Error(w, fmt.Sprintf("can't get metric value %q", mValue), http.StatusBadRequest)
-		return
-	}
 
 	switch mType {
 	case entity.GaugeType:
@@ -190,6 +185,8 @@ type Metrics struct {
 }
 
 func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var request Metrics
 
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -272,6 +269,8 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var request Metrics
 
 	err := json.NewDecoder(r.Body).Decode(&request)
@@ -324,6 +323,11 @@ func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 			ID:    request.ID,
 			MType: request.MType,
 		})
+	default:
+		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", request.MType))
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, request.MType)})
+		return
 	}
 }
 
