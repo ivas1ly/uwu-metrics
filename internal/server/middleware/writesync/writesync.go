@@ -22,10 +22,10 @@ func New(log *zap.Logger, storage file.PersistentStorage) func(next http.Handler
 			next.ServeHTTP(ww, r)
 
 			header := ww.Header().Get("Content-Type")
-			if ww.Status() == http.StatusOK && strings.Contains(header, "text/plain") ||
+			if ww.Status() == http.StatusOK && r.Method == http.MethodPost && strings.Contains(header, "text/plain") ||
 				strings.Contains(header, "application/json") {
 				if err := storage.Save(); err != nil {
-					log.Error("can't save metrics before shutting down", zap.Error(err))
+					log.Error("can't save metrics", zap.Error(err))
 				} else {
 					log.Info("all metrics saved successfully")
 				}
