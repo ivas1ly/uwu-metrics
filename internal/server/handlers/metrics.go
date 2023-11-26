@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 	"github.com/ivas1ly/uwu-metrics/web"
 )
 
@@ -27,11 +27,11 @@ const (
 )
 
 type metricsHandler struct {
-	storage storage.Storage
+	storage memory.Storage
 	logger  *zap.Logger
 }
 
-func NewRoutes(router *chi.Mux, storage storage.Storage, logger *zap.Logger) {
+func NewRoutes(router *chi.Mux, storage memory.Storage, logger *zap.Logger) {
 	h := &metricsHandler{
 		storage: storage,
 		logger:  logger.With(zap.String("handler", "metrics")),

@@ -11,15 +11,17 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
-	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
 func Run(cfg *Config) {
 	log := logger.New(defaultLogLevel).
 		With(zap.String("app", "server"))
 
-	memStorage := storage.NewMemStorage()
+	memStorage := memory.NewMemStorage()
+
 	router := chi.NewRouter()
+
 	router.Use(middleware.Compress(defaultCompressLevel))
 	router.Use(decompress.New(log))
 	router.Use(reqlogger.New(log))

@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/server/storage"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
 const (
@@ -221,7 +221,7 @@ type testStorage struct {
 	counter map[string]int64
 }
 
-func NewTestStorage() storage.Storage {
+func NewTestStorage() memory.Storage {
 	return &testStorage{
 		gauge:   make(map[string]float64),
 		counter: make(map[string]int64),
