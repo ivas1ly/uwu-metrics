@@ -240,6 +240,11 @@ func (ts *testStorage) GetMetrics() entity.Metrics {
 	return entity.Metrics{Counter: ts.counter, Gauge: ts.gauge}
 }
 
+func (ts *testStorage) SetMetrics(metrics entity.Metrics) {
+	ts.counter = metrics.Counter
+	ts.gauge = metrics.Gauge
+}
+
 func (ts *testStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ts.counter[name]
 	if !ok {

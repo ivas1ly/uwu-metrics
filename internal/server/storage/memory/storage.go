@@ -14,6 +14,7 @@ type Storage interface {
 	GetCounter(name string) (int64, error)
 	GetGauge(name string) (float64, error)
 	GetMetrics() entity.Metrics
+	SetMetrics(metrics entity.Metrics)
 }
 
 type memStorage struct {
@@ -38,6 +39,11 @@ func (ms *memStorage) UpdateCounter(name string, value int64) {
 
 func (ms *memStorage) GetMetrics() entity.Metrics {
 	return entity.Metrics{Counter: ms.counter, Gauge: ms.gauge}
+}
+
+func (ms *memStorage) SetMetrics(metrics entity.Metrics) {
+	ms.counter = metrics.Counter
+	ms.gauge = metrics.Gauge
 }
 
 func (ms *memStorage) GetCounter(name string) (int64, error) {
