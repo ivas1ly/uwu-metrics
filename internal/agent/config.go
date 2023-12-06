@@ -3,7 +3,6 @@ package agent
 import (
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -14,7 +13,7 @@ const (
 	defaultReportInterval = 10
 	defaultEndpointHost   = "localhost:8080"
 	defaultClientTimeout  = 3 * time.Second
-	defaultLogLevel       = slog.LevelDebug
+	defaultLogLevel       = "info"
 )
 
 type Config struct {

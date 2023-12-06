@@ -1,8 +1,6 @@
 package agent
 
 import (
-	"log"
-	"log/slog"
 	"net/url"
 	"os"
 	"os/signal"
@@ -10,7 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
+	"go.uber.org/zap"
+
+	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/utils"
 )
 
@@ -21,12 +21,8 @@ const (
 )
 
 func Run(cfg *Config) {
-	opts := &slog.HandlerOptions{
-		Level: defaultLogLevel,
-	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, opts)).
-		With(slog.String("app", "agent"))
-	slog.SetDefault(logger)
+	log := logger.New(defaultLogLevel).
+		With(zap.String("app", "agent"))
 
 	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
 	reportSendTicker := time.NewTicker(cfg.ReportInterval)
@@ -38,13 +34,14 @@ func Run(cfg *Config) {
 	}
 
 	metrics := &Metrics{}
+
 	client := Client{
 		URL:     endpoint.String(),
 		Metrics: metrics,
-		Logger:  logger,
+		Logger:  log,
 	}
-	logger.Info("agent started", slog.String("server endpoint", cfg.EndpointHost),
-		slog.Duration("pollInterval", cfg.PollInterval), slog.Duration("reportInterval", cfg.ReportInterval))
+	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
+		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
@@ -58,13 +55,13 @@ func Run(cfg *Config) {
 		for {
 			select {
 			case mut := <-metricsUpdateTicker.C:
-				logger.Info("[update] metrics updated", slog.Time("updated at", mut))
+				log.Info("[update] metrics updated", zap.Time("updated at", mut))
 				metrics.UpdateMetrics()
 			case rst := <-reportSendTicker.C:
-				logger.Info("[report] metrics sent to server", slog.Time("sent at", rst))
+				log.Info("[report] metrics sent to server", zap.Time("sent at", rst))
 				client.SendReport()
 			case <-done:
-				logger.Info("all tickers have been stopped")
+				log.Info("all tickers have been stopped")
 				return
 			}
 		}
@@ -72,8 +69,8 @@ func Run(cfg *Config) {
 
 	// block until signal is received
 	sig := <-c
-	logger.Warn("app got os signal", slog.String("signal", sig.String()))
-	logger.Info("gracefully shutting down...")
+	log.Warn("app got os signal", zap.String("signal", sig.String()))
+	log.Info("gracefully shutting down...")
 	reportSendTicker.Stop()
 	metricsUpdateTicker.Stop()
 
@@ -83,7 +80,7 @@ func Run(cfg *Config) {
 	// wait until done
 	<-done
 
-	logger.Info("shutdown successfully")
+	log.Info("shutdown successfully")
 }
 
 type Metrics struct {
@@ -100,48 +97,48 @@ func (ms *Metrics) UpdateMetrics() {
 	ms.RandomValue = utils.RandFloat(minRandomValue, maxRandomValue)
 	ms.PollCount++
 
-	log.Println("all metrics updated")
+	zap.L().Info("all metrics updated")
 }
 
-func (ms *Metrics) PrepareGaugeReport() map[string]entity.Gauge {
-	report := make(map[string]entity.Gauge, reportMapSize)
+func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
+	report := make(map[string]float64, reportMapSize)
 
-	report["Alloc"] = entity.Gauge(ms.MemStats.Alloc)
-	report["BuckHashSys"] = entity.Gauge(ms.MemStats.BuckHashSys)
-	report["Frees"] = entity.Gauge(ms.MemStats.Frees)
-	report["GCCPUFraction"] = entity.Gauge(ms.MemStats.GCCPUFraction)
-	report["GCSys"] = entity.Gauge(ms.MemStats.GCSys)
-	report["HeapAlloc"] = entity.Gauge(ms.MemStats.HeapAlloc)
-	report["HeapIdle"] = entity.Gauge(ms.MemStats.HeapIdle)
-	report["HeapInuse"] = entity.Gauge(ms.MemStats.HeapInuse)
-	report["HeapObjects"] = entity.Gauge(ms.MemStats.HeapObjects)
-	report["HeapReleased"] = entity.Gauge(ms.MemStats.HeapReleased)
-	report["HeapSys"] = entity.Gauge(ms.MemStats.HeapSys)
-	report["LastGC"] = entity.Gauge(ms.MemStats.LastGC)
-	report["Lookups"] = entity.Gauge(ms.MemStats.Lookups)
-	report["MCacheInuse"] = entity.Gauge(ms.MemStats.MCacheInuse)
-	report["MCacheSys"] = entity.Gauge(ms.MemStats.MCacheSys)
-	report["MSpanInuse"] = entity.Gauge(ms.MemStats.MSpanInuse)
-	report["MSpanSys"] = entity.Gauge(ms.MemStats.MSpanSys)
-	report["Mallocs"] = entity.Gauge(ms.MemStats.Mallocs)
-	report["NextGC"] = entity.Gauge(ms.MemStats.NextGC)
-	report["NumForcedGC"] = entity.Gauge(ms.MemStats.NumForcedGC)
-	report["NumGC"] = entity.Gauge(ms.MemStats.NumGC)
-	report["OtherSys"] = entity.Gauge(ms.MemStats.OtherSys)
-	report["PauseTotalNs"] = entity.Gauge(ms.MemStats.PauseTotalNs)
-	report["StackInuse"] = entity.Gauge(ms.MemStats.StackInuse)
-	report["StackSys"] = entity.Gauge(ms.MemStats.StackSys)
-	report["Sys"] = entity.Gauge(ms.MemStats.Sys)
-	report["TotalAlloc"] = entity.Gauge(ms.MemStats.TotalAlloc)
+	report["Alloc"] = float64(ms.MemStats.Alloc)
+	report["BuckHashSys"] = float64(ms.MemStats.BuckHashSys)
+	report["Frees"] = float64(ms.MemStats.Frees)
+	report["GCCPUFraction"] = ms.MemStats.GCCPUFraction
+	report["GCSys"] = float64(ms.MemStats.GCSys)
+	report["HeapAlloc"] = float64(ms.MemStats.HeapAlloc)
+	report["HeapIdle"] = float64(ms.MemStats.HeapIdle)
+	report["HeapInuse"] = float64(ms.MemStats.HeapInuse)
+	report["HeapObjects"] = float64(ms.MemStats.HeapObjects)
+	report["HeapReleased"] = float64(ms.MemStats.HeapReleased)
+	report["HeapSys"] = float64(ms.MemStats.HeapSys)
+	report["LastGC"] = float64(ms.MemStats.LastGC)
+	report["Lookups"] = float64(ms.MemStats.Lookups)
+	report["MCacheInuse"] = float64(ms.MemStats.MCacheInuse)
+	report["MCacheSys"] = float64(ms.MemStats.MCacheSys)
+	report["MSpanInuse"] = float64(ms.MemStats.MSpanInuse)
+	report["MSpanSys"] = float64(ms.MemStats.MSpanSys)
+	report["Mallocs"] = float64(ms.MemStats.Mallocs)
+	report["NextGC"] = float64(ms.MemStats.NextGC)
+	report["NumForcedGC"] = float64(ms.MemStats.NumForcedGC)
+	report["NumGC"] = float64(ms.MemStats.NumGC)
+	report["OtherSys"] = float64(ms.MemStats.OtherSys)
+	report["PauseTotalNs"] = float64(ms.MemStats.PauseTotalNs)
+	report["StackInuse"] = float64(ms.MemStats.StackInuse)
+	report["StackSys"] = float64(ms.MemStats.StackSys)
+	report["Sys"] = float64(ms.MemStats.Sys)
+	report["TotalAlloc"] = float64(ms.MemStats.TotalAlloc)
 
-	report["RandomValue"] = entity.Gauge(ms.RandomValue)
+	report["RandomValue"] = ms.RandomValue
 
 	return report
 }
 
-func (ms *Metrics) PrepareCounterReport() map[string]entity.Counter {
-	report := make(map[string]entity.Counter, 1)
-	report["PollCount"] = entity.Counter(ms.PollCount)
+func (ms *Metrics) PrepareCounterReport() map[string]int64 {
+	report := make(map[string]int64, 1)
+	report["PollCount"] = ms.PollCount
 
 	return report
 }

@@ -1,9 +1,7 @@
-package storage
+package memory
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 )
@@ -11,10 +9,12 @@ import (
 var _ Storage = (*memStorage)(nil)
 
 type Storage interface {
-	Update(metric entity.Metric) error
+	UpdateCounter(name string, value int64)
+	UpdateGauge(name string, value float64)
 	GetCounter(name string) (int64, error)
 	GetGauge(name string) (float64, error)
 	GetMetrics() entity.Metrics
+	SetMetrics(metrics entity.Metrics)
 }
 
 type memStorage struct {
@@ -29,35 +29,27 @@ func NewMemStorage() Storage {
 	}
 }
 
-func (ms *memStorage) Update(metric entity.Metric) error {
-	switch metric.Type {
-	case entity.GaugeType:
-		value, err := strconv.ParseFloat(metric.Value, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ms.gauge[metric.Name] = value
-	case entity.CounterType:
-		value, err := strconv.ParseInt(metric.Value, 10, 64)
-		if err != nil {
-			return fmt.Errorf("incorrect metric value: %w", err)
-		}
-		ms.counter[metric.Name] += value
-	default:
-		return errors.New("unknown metric type")
-	}
+func (ms *memStorage) UpdateGauge(name string, value float64) {
+	ms.gauge[name] = value
+}
 
-	return nil
+func (ms *memStorage) UpdateCounter(name string, value int64) {
+	ms.counter[name] += value
 }
 
 func (ms *memStorage) GetMetrics() entity.Metrics {
 	return entity.Metrics{Counter: ms.counter, Gauge: ms.gauge}
 }
 
+func (ms *memStorage) SetMetrics(metrics entity.Metrics) {
+	ms.counter = metrics.Counter
+	ms.gauge = metrics.Gauge
+}
+
 func (ms *memStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ms.counter[name]
 	if !ok {
-		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+		return 0, fmt.Errorf("counter metric %q doesn't exist", name)
 	}
 	return counter, nil
 }
@@ -65,7 +57,7 @@ func (ms *memStorage) GetCounter(name string) (int64, error) {
 func (ms *memStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ms.gauge[name]
 	if !ok {
-		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+		return 0, fmt.Errorf("gauge metric %q doesn't exist", name)
 	}
 	return gauge, nil
 }
