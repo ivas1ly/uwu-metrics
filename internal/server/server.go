@@ -11,9 +11,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
+	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
@@ -27,8 +29,6 @@ func Run(cfg *Config) {
 		With(zap.String("app", "server"))
 
 	ctx := context.Background()
-	withCancel, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	memStorage := memory.NewMemStorage()
 
@@ -37,8 +37,19 @@ func Run(cfg *Config) {
 		persistentStorage = file.NewFileStorage(cfg.FileStoragePath, defaultFilePerm, memStorage)
 	}
 
+	var db *pgxpool.Pool
+	var err error
+	if cfg.DatabaseDSN != "" {
+		log.Info("received connection string", zap.String("connString", cfg.DatabaseDSN))
+		db, err = postgres.New(ctx, cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
+		if err != nil {
+			log.Fatal("can't connect to database", zap.Error(err))
+		}
+	}
+	defer db.Close()
+
 	if cfg.FileRestore && cfg.FileStoragePath != "" {
-		if err := persistentStorage.Restore(); err != nil {
+		if err = persistentStorage.Restore(); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))
 		} else {
 			log.Info("file restored", zap.String("file", cfg.FileStoragePath))
@@ -63,9 +74,32 @@ func Run(cfg *Config) {
 		http.NotFound(w, r)
 	}))
 
+	withCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
 	if cfg.FileStoragePath != "" && cfg.StoreInterval > 0 {
 		go writeMetricsAsync(withCancel, persistentStorage, cfg.StoreInterval, log)
 	}
+
+	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		if db != nil {
+			log.Info("check database connection")
+
+			ctxDB, cancelDB := context.WithTimeout(context.Background(), defaultDatabaseConnTimeout)
+			defer cancelDB()
+			err = db.Ping(ctxDB)
+			if err != nil {
+				log.Info("can't ping database", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			log.Info("database ping OK")
+			w.WriteHeader(http.StatusOK)
+		} else {
+			log.Info("database connection string is empty, nothing to ping")
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	})
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()

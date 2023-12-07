@@ -10,24 +10,28 @@ import (
 )
 
 const (
-	defaultHost              = "localhost"
-	defaultPort              = "8080"
-	defaultReadTimeout       = 10 * time.Second
-	defaultReadHeaderTimeout = 5 * time.Second
-	defaultWriteTimeout      = 10 * time.Second
-	defaultIdleTimeout       = 1 * time.Minute
-	defaultShutdownTimeout   = 5 * time.Second
-	defaultCompressLevel     = 5
-	defaultLogLevel          = "info"
-	defaultStoreInterval     = 300
-	defaultFileStoragePath   = "/tmp/metrics-db.json"
-	defaultFileRestore       = true
-	defaultFilePerm          = 0666
+	defaultHost                 = "localhost"
+	defaultPort                 = "8080"
+	defaultReadTimeout          = 10 * time.Second
+	defaultReadHeaderTimeout    = 5 * time.Second
+	defaultWriteTimeout         = 10 * time.Second
+	defaultIdleTimeout          = 1 * time.Minute
+	defaultShutdownTimeout      = 5 * time.Second
+	defaultCompressLevel        = 5
+	defaultLogLevel             = "info"
+	defaultStoreInterval        = 300
+	defaultFileStoragePath      = "/tmp/metrics-db.json"
+	defaultFileRestore          = true
+	defaultFilePerm             = 0666
+	defaultDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/postgres?ssmode=disable"
+	defaultDatabaseConnTimeout  = 3 * time.Second
+	defaultDatabaseConnAttempts = 3
 )
 
 type Config struct {
 	Endpoint        string
 	FileStoragePath string
+	DatabaseDSN     string
 	StoreInterval   int
 	FileRestore     bool
 }
@@ -50,6 +54,9 @@ func NewConfig() *Config {
 	fileRestoreUsage := fmt.Sprintf("load or not previously saved values from the specified file, "+
 		"example: \"%t\"", defaultFileRestore)
 	flag.BoolVar(&cfg.FileRestore, "r", defaultFileRestore, fileRestoreUsage)
+
+	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", defaultDatabaseDSN)
+	flag.StringVar(&cfg.DatabaseDSN, "d", "", dsnUsage)
 
 	flag.Parse()
 
@@ -80,6 +87,10 @@ func NewConfig() *Config {
 		if err == nil {
 			cfg.FileRestore = envValue
 		}
+	}
+
+	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
+		cfg.DatabaseDSN = databaseDSN
 	}
 
 	fmt.Printf("%+v\n\n", cfg)
