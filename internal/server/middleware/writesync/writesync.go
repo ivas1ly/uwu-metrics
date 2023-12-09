@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 )
 
-func New(log *zap.Logger, storage file.PersistentStorage) func(next http.Handler) http.Handler {
+func New(log *zap.Logger, storage persistent.Storage) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		log = log.With(zap.String("middleware", "write sync"))
 
