@@ -6,12 +6,8 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 )
-
-type PersistentStorage interface {
-	Save() error
-	Restore() error
-}
 
 type fileStorage struct {
 	memoryStorage memory.Storage
@@ -19,7 +15,7 @@ type fileStorage struct {
 	perm          os.FileMode
 }
 
-func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) PersistentStorage {
+func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) persistent.Storage {
 	return &fileStorage{
 		fileName:      fileName,
 		perm:          perm,

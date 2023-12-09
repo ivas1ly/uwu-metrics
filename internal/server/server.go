@@ -20,6 +20,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/writesync"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
 )
 
@@ -31,7 +32,7 @@ func Run(cfg *Config) {
 
 	memStorage := memory.NewMemStorage()
 
-	var persistentStorage file.PersistentStorage
+	var persistentStorage persistent.Storage
 	if cfg.FileStoragePath != "" {
 		persistentStorage = file.NewFileStorage(cfg.FileStoragePath, defaultFilePerm, memStorage)
 	}
@@ -156,7 +157,7 @@ func runServer(ctx context.Context, endpoint string, router *chi.Mux, log *zap.L
 	return nil
 }
 
-func writeMetricsAsync(ctx context.Context, storage file.PersistentStorage, interval int, log *zap.Logger) {
+func writeMetricsAsync(ctx context.Context, storage persistent.Storage, interval int, log *zap.Logger) {
 	saveTicker := time.NewTicker(time.Duration(interval) * time.Second)
 
 	log.Info("start persist metrics job", zap.Int("interval", interval))
