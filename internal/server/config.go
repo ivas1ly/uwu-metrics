@@ -23,7 +23,7 @@ const (
 	defaultFileStoragePath      = "/tmp/metrics-db.json"
 	defaultFileRestore          = true
 	defaultFilePerm             = 0666
-	defaultDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/postgres?ssmode=disable"
+	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?ssmode=disable"
 	defaultDatabaseConnTimeout  = 3 * time.Second
 	defaultDatabaseConnAttempts = 3
 )
@@ -55,7 +55,7 @@ func NewConfig() *Config {
 		"example: \"%t\"", defaultFileRestore)
 	flag.BoolVar(&cfg.FileRestore, "r", defaultFileRestore, fileRestoreUsage)
 
-	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", defaultDatabaseDSN)
+	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", exampleDatabaseDSN)
 	flag.StringVar(&cfg.DatabaseDSN, "d", "", dsnUsage)
 
 	flag.Parse()
