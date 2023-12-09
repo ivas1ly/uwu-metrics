@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
@@ -37,7 +36,7 @@ func Run(cfg *Config) {
 		persistentStorage = file.NewFileStorage(cfg.FileStoragePath, defaultFilePerm, memStorage)
 	}
 
-	var db *pgxpool.Pool
+	var db *postgres.DB
 	var err error
 	if cfg.DatabaseDSN != "" {
 		log.Info("received connection string", zap.String("connString", cfg.DatabaseDSN))
