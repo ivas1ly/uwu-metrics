@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
+	"github.com/ivas1ly/uwu-metrics/internal/lib/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
@@ -41,6 +42,13 @@ func Run(cfg *Config) {
 	var err error
 	if cfg.DatabaseDSN != "" {
 		log.Info("received connection string", zap.String("connString", cfg.DatabaseDSN))
+
+		err = migrate.RunMigrations(cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
+		if err != nil {
+			log.Fatal("can't run migrations", zap.Error(err))
+		}
+		log.Info("migrations up success", zap.String("status", "OK"))
+
 		db, err = postgres.New(ctx, cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
 		if err != nil {
 			log.Fatal("can't connect to database", zap.Error(err))
