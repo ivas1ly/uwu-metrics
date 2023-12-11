@@ -12,19 +12,19 @@ import (
 
 func New(log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		log = log.With(zap.String("middleware", "logger"))
+		l := log.With(zap.String("middleware", "logger"))
 
-		log.Info("added logger middleware")
+		l.Info("added logger middleware")
 
 		logFn := func(w http.ResponseWriter, r *http.Request) {
-			entry := log.With(
+			entry := l.With(
 				zap.String("uri", r.RequestURI),
 				zap.String("method", r.Method),
 			)
 
 			buf, err := io.ReadAll(r.Body)
 			if err != nil {
-				log.Info("can't read body")
+				l.Info("can't read body")
 			} else {
 				entry = entry.With(zap.String("req body", string(buf)))
 			}
