@@ -22,6 +22,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/writesync"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/database"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
 )
 
@@ -53,14 +54,24 @@ func Run(cfg *Config) {
 		if err != nil {
 			log.Fatal("can't connect to database", zap.Error(err))
 		}
-	}
-	defer db.Close()
+		defer db.Close()
 
-	if cfg.FileRestore && cfg.FileStoragePath != "" {
+		persistentStorage = database.NewDBStorage(memStorage, db, defaultDatabaseConnTimeout)
+	}
+
+	if cfg.Restore && cfg.FileStoragePath != "" && db == nil {
 		if err = persistentStorage.Restore(); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))
 		} else {
 			log.Info("file restored", zap.String("file", cfg.FileStoragePath))
+		}
+	}
+
+	if db != nil && cfg.Restore {
+		if err = persistentStorage.Restore(); err != nil {
+			log.Info("failed to restore metrics from database", zap.String("error", err.Error()))
+		} else {
+			log.Info("metrics restored from database")
 		}
 	}
 

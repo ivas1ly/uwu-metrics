@@ -24,7 +24,7 @@ const (
 	defaultFileRestore          = true
 	defaultFilePerm             = 0666
 	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?ssmode=disable"
-	defaultDatabaseConnTimeout  = 3 * time.Second
+	defaultDatabaseConnTimeout  = 10 * time.Second
 	defaultDatabaseConnAttempts = 3
 )
 
@@ -33,7 +33,7 @@ type Config struct {
 	FileStoragePath string
 	DatabaseDSN     string
 	StoreInterval   int
-	FileRestore     bool
+	Restore         bool
 }
 
 func NewConfig() *Config {
@@ -53,7 +53,7 @@ func NewConfig() *Config {
 
 	fileRestoreUsage := fmt.Sprintf("load or not previously saved values from the specified file, "+
 		"example: \"%t\"", defaultFileRestore)
-	flag.BoolVar(&cfg.FileRestore, "r", defaultFileRestore, fileRestoreUsage)
+	flag.BoolVar(&cfg.Restore, "r", defaultFileRestore, fileRestoreUsage)
 
 	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", exampleDatabaseDSN)
 	flag.StringVar(&cfg.DatabaseDSN, "d", "", dsnUsage)
@@ -82,10 +82,10 @@ func NewConfig() *Config {
 		cfg.FileStoragePath = fileStoragePath
 	}
 
-	if fileRestore := os.Getenv("RESTORE"); fileRestore != "" {
-		envValue, err := strconv.ParseBool(fileRestore)
+	if restore := os.Getenv("RESTORE"); restore != "" {
+		envValue, err := strconv.ParseBool(restore)
 		if err == nil {
-			cfg.FileRestore = envValue
+			cfg.Restore = envValue
 		}
 	}
 
