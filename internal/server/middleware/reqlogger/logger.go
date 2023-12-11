@@ -1,6 +1,8 @@
 package reqlogger
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"time"
 
@@ -19,6 +21,16 @@ func New(log *zap.Logger) func(next http.Handler) http.Handler {
 				zap.String("uri", r.RequestURI),
 				zap.String("method", r.Method),
 			)
+
+			buf, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Info("can't read body")
+			} else {
+				entry = entry.With(zap.String("req body", string(buf)))
+			}
+
+			reader := io.NopCloser(bytes.NewBuffer(buf))
+			r.Body = reader
 
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
