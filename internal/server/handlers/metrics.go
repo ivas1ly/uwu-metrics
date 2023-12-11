@@ -46,6 +46,9 @@ func NewRoutes(router *chi.Mux, storage memory.Storage, logger *zap.Logger) {
 		r.Post("/", h.valueJSON)
 		r.Get("/{type}/{name}", h.valueURL)
 	})
+	router.Route("/updates", func(r chi.Router) {
+		r.Post("/", h.updatesJSON)
+	})
 }
 
 func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
@@ -266,6 +269,60 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 		zap.String("type", request.MType),
 		zap.String("name", request.ID))
 	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
+}
+
+func (h *metricsHandler) updatesJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var request []Metrics
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if errors.Is(err, io.EOF) {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "empty request body"})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "can't parse request body"})
+		return
+	}
+
+	for _, metric := range request {
+		errMsg, ok := checkRequestFields(metric)
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": strings.Join(errMsg, ", ")})
+			return
+		}
+
+		switch metric.MType {
+		case entity.GaugeType:
+			if metric.Value == nil {
+				h.logger.Info(EmptyMetricValueMsg, zap.String("type", metric.MType))
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, metric.MType)})
+				return
+			}
+
+			h.storage.UpdateGauge(metric.ID, *metric.Value)
+		case entity.CounterType:
+			if metric.Delta == nil {
+				h.logger.Info(EmptyMetricValueMsg, zap.String("type", metric.MType))
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, metric.MType)})
+				return
+			}
+
+			h.storage.UpdateCounter(metric.ID, *metric.Delta)
+		default:
+			h.logger.Info(UnknownMetricTypeMsg, zap.String("type", metric.MType))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, metric.MType)})
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
