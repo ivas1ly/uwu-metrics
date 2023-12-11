@@ -12,6 +12,8 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
 )
 
+const defaultPayloadCap = 40
+
 type Client struct {
 	Metrics *Metrics
 	Logger  *zap.Logger
@@ -26,40 +28,41 @@ type MetricsPayload struct {
 }
 
 func (c *Client) SendReport() {
+	payload := make([]MetricsPayload, 0, defaultPayloadCap)
+
 	for key, value := range c.Metrics.PrepareGaugeReport() {
 		val := value
-		body, err := json.Marshal(&MetricsPayload{
+
+		mp := MetricsPayload{
 			ID:    key,
 			MType: entity.GaugeType,
 			Delta: nil,
 			Value: &val,
-		})
-		if err != nil {
-			c.Logger.Info("failed to marshal json", zap.Error(err))
-			continue
 		}
 
-		if err := c.sendRequest(http.MethodPost, body); err != nil {
-			continue
-		}
+		payload = append(payload, mp)
 	}
 
 	for key, value := range c.Metrics.PrepareCounterReport() {
 		val := value
-		body, err := json.Marshal(&MetricsPayload{
+		mp := MetricsPayload{
 			ID:    key,
 			MType: entity.CounterType,
 			Delta: &val,
 			Value: nil,
-		})
-		if err != nil {
-			c.Logger.Info("failed to marshal json", zap.Error(err))
-			continue
 		}
 
-		if err := c.sendRequest(http.MethodPost, body); err != nil {
-			continue
-		}
+		payload = append(payload, mp)
+	}
+
+	body, err := json.Marshal(&payload)
+	if err != nil {
+		c.Logger.Info("failed to marshal json", zap.Error(err))
+		return
+	}
+
+	if err := c.sendRequest(http.MethodPost, body); err != nil {
+		return
 	}
 }
 

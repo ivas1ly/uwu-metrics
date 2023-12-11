@@ -30,7 +30,7 @@ func Run(cfg *Config) {
 	endpoint := url.URL{
 		Scheme: "http",
 		Host:   cfg.EndpointHost,
-		Path:   "/update/",
+		Path:   "/updates/",
 	}
 
 	metrics := &Metrics{}
