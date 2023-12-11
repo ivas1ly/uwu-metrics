@@ -1,0 +1,11 @@
+BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS metrics (
+    id TEXT NOT NULL,
+    mtype TEXT NOT NULL,
+    mdelta BIGINT NULL,
+    mvalue DOUBLE PRECISION NULL,
+    PRIMARY KEY (id)
+);
+
+COMMIT;
