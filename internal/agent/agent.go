@@ -69,7 +69,7 @@ func Run(cfg *Config) {
 
 	// block until signal is received
 	sig := <-c
-	log.Warn("app got os signal", zap.String("signal", sig.String()))
+	log.Info("app got os signal", zap.String("signal", sig.String()))
 	log.Info("gracefully shutting down...")
 	reportSendTicker.Stop()
 	metricsUpdateTicker.Stop()

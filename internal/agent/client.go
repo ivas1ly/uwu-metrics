@@ -70,18 +70,18 @@ func (c *Client) sendRequest(method string, body []byte) error {
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
 	if _, err := gw.Write(body); err != nil {
-		c.Logger.Error("can't compress body", zap.Error(err))
+		c.Logger.Info("can't compress body", zap.Error(err))
 		return err
 	}
 
 	if err := gw.Close(); err != nil {
-		c.Logger.Error("can't close gzip writer", zap.Error(err))
+		c.Logger.Info("can't close gzip writer", zap.Error(err))
 		return err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, c.URL, &buf)
 	if err != nil {
-		c.Logger.Error("can't create new HTTP request", zap.Error(err))
+		c.Logger.Info("can't create new HTTP request", zap.Error(err))
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -89,7 +89,7 @@ func (c *Client) sendRequest(method string, body []byte) error {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		c.Logger.Error("can't send the HTTP request", zap.Error(err))
+		c.Logger.Info("can't send the HTTP request", zap.Error(err))
 		return err
 	}
 	defer resp.Body.Close()

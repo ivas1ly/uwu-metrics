@@ -120,7 +120,7 @@ func Run(cfg *Config) {
 	cancel()
 
 	if err := persistentStorage.Save(); err != nil {
-		log.Error("can't save metrics before shutting down", zap.Error(err))
+		log.Info("can't save metrics before shutting down", zap.Error(err))
 	} else {
 		log.Info("all metrics saved successfully")
 	}
@@ -177,10 +177,10 @@ func writeMetricsAsync(ctx context.Context, storage persistent.Storage, interval
 			return
 		case st := <-saveTicker.C:
 			if err := storage.Save(); err != nil {
-				log.Error("can't save metrics with interval",
+				log.Info("[ERROR] ticker can't save metrics with interval",
 					zap.Int("interval", interval), zap.Error(err))
 			}
-			log.Info("metrics saved", zap.Time("saved at", st))
+			log.Info("[OK] ticker metrics saved", zap.Time("saved at", st))
 		}
 	}
 }
