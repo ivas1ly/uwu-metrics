@@ -581,6 +581,118 @@ func TestMetricsHandlerJSON(t *testing.T) {
 	}
 }
 
+func TestMetricsUpdatesHandlerJSON(t *testing.T) {
+	testStorage := NewTestStorage()
+	logger := zap.Must(zap.NewDevelopment())
+	router := chi.NewRouter()
+
+	NewRoutes(router, testStorage, logger)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	type want struct {
+		contentType string
+		body        string
+		statusCode  int
+	}
+	tests := []struct {
+		name   string
+		path   string
+		method string
+		body   string
+		want   want
+	}{
+		{
+			name:   "updates with several correct metrics at a time",
+			path:   "/updates",
+			method: http.MethodPost,
+			body: `[{"delta": 1,"id": "my counter","type": "counter"},
+{"value": 789.456,"id": "my gauge","type": "gauge"}]`,
+			want: want{
+				contentType: "application/json",
+				body:        "",
+				statusCode:  200,
+			},
+		},
+		{
+			name:   "updates with several correct metrics / incorrect req fields",
+			path:   "/updates",
+			method: http.MethodPost,
+			body: `[{"delta": 1,"id": "my counter","type": "abc"},
+{"value": 789.456,"id": "my gauge","type": "gauge"}]`,
+			want: want{
+				contentType: "application/json",
+				body:        `{"message":"unknown metric type \"abc\""}`,
+				statusCode:  400,
+			},
+		},
+		{
+			name:   "updates with several metrics / with missing fields",
+			path:   "/updates",
+			method: http.MethodPost,
+			body: `[{"delta": 1,"type": "abc"},
+{"value": 789.456,"id": "my gauge","type": "gauge"}]`,
+			want: want{
+				contentType: "application/json",
+				body:        `{"message":"field \"id\" is required"}`,
+				statusCode:  400,
+			},
+		},
+		{
+			name:   "updates with several metrics / with several missing fields",
+			path:   "/updates",
+			method: http.MethodPost,
+			body: `[{"delta": 1},
+{"value": 789.456,"id": "my gauge","type": "gauge"}]`,
+			want: want{
+				contentType: "application/json",
+				body:        `{"message":"field \"type\" is required, field \"id\" is required"}`,
+				statusCode:  400,
+			},
+		},
+		{
+			name:   "updates with empty body",
+			path:   "/updates",
+			method: http.MethodPost,
+			body:   ``,
+			want: want{
+				contentType: "application/json",
+				body:        `{"message":"empty request body"}`,
+				statusCode:  400,
+			},
+		},
+		{
+			name:   "updates with incorrect request body",
+			path:   "/updates",
+			method: http.MethodPost,
+			body:   `{ "UwU" }`,
+			want: want{
+				contentType: "application/json",
+				body:        `{"message":"can't parse request body"}`,
+				statusCode:  400,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := testRequest(t, ts, test.method, test.path, bytes.NewBuffer([]byte(test.body)), "application/json")
+			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			assert.Equal(t, test.want.statusCode, res.StatusCode)
+			defer res.Body.Close()
+
+			if test.want.body != "" {
+				resBody, err := io.ReadAll(res.Body)
+				require.NoError(t, err)
+
+				// remove "\n" character at the response end of the body
+				assert.Equal(t, test.want.body, strings.TrimSpace(string(resBody)))
+			}
+		})
+	}
+}
+
 func testRequest(t *testing.T, ts *httptest.Server, method, path string, body io.Reader, header string) *http.Response {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTestClientTimeout)
 	defer cancel()
