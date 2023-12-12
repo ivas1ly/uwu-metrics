@@ -16,6 +16,8 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
+const endpoint = "/updates/"
+
 func TestClientSendRequest(t *testing.T) {
 	storage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
@@ -32,7 +34,7 @@ func TestClientSendRequest(t *testing.T) {
 	client := Client{
 		Metrics: metrics,
 		Logger:  zap.Must(zap.NewDevelopment()),
-		URL:     ts.URL + "/updates/",
+		URL:     ts.URL + endpoint,
 	}
 
 	payload := make([]MetricsPayload, 0, defaultPayloadCap)
@@ -67,6 +69,28 @@ func TestClientSendRequest(t *testing.T) {
 
 	err = client.sendRequest(http.MethodPost, b)
 	assert.NoError(t, err)
+}
+
+func TestClientSendReport(t *testing.T) {
+	storage := NewTestStorage()
+	logger := zap.Must(zap.NewDevelopment())
+	router := chi.NewRouter()
+
+	handlers.NewRoutes(router, storage, logger)
+
+	ts := httptest.NewServer(router)
+	defer ts.Close()
+
+	metrics := &Metrics{}
+	metrics.UpdateMetrics()
+
+	client := Client{
+		Metrics: metrics,
+		Logger:  zap.Must(zap.NewDevelopment()),
+		URL:     ts.URL + endpoint,
+	}
+
+	assert.NoError(t, client.SendReport())
 }
 
 type testStorage struct {

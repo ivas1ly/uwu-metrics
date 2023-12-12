@@ -59,7 +59,10 @@ func Run(cfg *Config) {
 				metrics.UpdateMetrics()
 			case rst := <-reportSendTicker.C:
 				log.Info("[report] metrics sent to server", zap.Time("sent at", rst))
-				client.SendReport()
+				err := client.SendReport()
+				if err != nil {
+					log.Info("[report] failed to send metrics to server")
+				}
 			case <-done:
 				log.Info("all tickers have been stopped")
 				return

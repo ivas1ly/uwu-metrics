@@ -32,7 +32,7 @@ type MetricsPayload struct {
 	MType string   `json:"type"`
 }
 
-func (c *Client) SendReport() {
+func (c *Client) SendReport() error {
 	payload := make([]MetricsPayload, 0, defaultPayloadCap)
 
 	for key, value := range c.Metrics.PrepareGaugeReport() {
@@ -63,7 +63,7 @@ func (c *Client) SendReport() {
 	body, err := json.Marshal(&payload)
 	if err != nil {
 		c.Logger.Info("failed to marshal json", zap.Error(err))
-		return
+		return err
 	}
 
 	for _, interval := range retryIntervals {
@@ -77,6 +77,8 @@ func (c *Client) SendReport() {
 			break
 		}
 	}
+
+	return nil
 }
 
 func (c *Client) sendRequest(method string, body []byte) error {
