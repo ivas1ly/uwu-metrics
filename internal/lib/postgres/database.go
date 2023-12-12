@@ -27,7 +27,7 @@ func New(ctx context.Context, connString string, connAttempts int, connTimeout t
 	withTimeout, cancel := context.WithTimeout(ctx, connTimeout)
 	defer cancel()
 
-	err = DoWithAttempts(func() error {
+	err = retryWithAttempts(func() error {
 		if err = pool.Ping(withTimeout); err != nil {
 			return fmt.Errorf("failed to ping database: %w", err)
 		}
@@ -42,7 +42,7 @@ func New(ctx context.Context, connString string, connAttempts int, connTimeout t
 	}, nil
 }
 
-func DoWithAttempts(fn func() error, connAttempts int, connTimeout time.Duration) error {
+func retryWithAttempts(fn func() error, connAttempts int, connTimeout time.Duration) error {
 	var err error
 
 	for connAttempts > 0 {
