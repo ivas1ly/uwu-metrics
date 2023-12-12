@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -43,6 +44,17 @@ func (ds *dbStorage) Save() error {
 	withTimeout, cancel := context.WithTimeout(ctx, ds.timeout)
 	defer cancel()
 
+	tx, err := ds.db.Pool.Begin(withTimeout)
+	if err != nil {
+		return err
+	}
+	defer func(tx pgx.Tx) {
+		err = tx.Rollback(ctx)
+		if errors.Is(err, pgx.ErrTxClosed) {
+			return
+		}
+	}(tx)
+
 	batch := &pgx.Batch{}
 
 	for id, metric := range metrics.Gauge {
@@ -53,9 +65,20 @@ func (ds *dbStorage) Save() error {
 		batch.Queue(saveCounter, id, "counter", metric, nil)
 	}
 
-	results := ds.db.Pool.SendBatch(withTimeout, batch)
+	results := tx.SendBatch(withTimeout, batch)
 
-	err := results.Close()
+	// check one affected row
+	ct, err := results.Exec()
+	if err != nil || ct.RowsAffected() != 1 {
+		return err
+	}
+
+	err = results.Close()
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(withTimeout)
 	if err != nil {
 		return err
 	}
@@ -89,7 +112,7 @@ func (ds *dbStorage) Restore() error {
 	for rows.Next() {
 		metric := Metric{}
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&metric.id,
 			&metric.mtype,
 			&metric.mdelta,
