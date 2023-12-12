@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -13,6 +14,10 @@ import (
 )
 
 const defaultPayloadCap = 40
+
+var (
+	retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+)
 
 type Client struct {
 	Metrics *Metrics
@@ -61,8 +66,16 @@ func (c *Client) SendReport() {
 		return
 	}
 
-	if err := c.sendRequest(http.MethodPost, body); err != nil {
-		return
+	for _, interval := range retryIntervals {
+		err = c.sendRequest(http.MethodPost, body)
+		if err != nil {
+			c.Logger.Info("can't send request, trying again", zap.Error(err),
+				zap.Duration("with interval", interval))
+			time.Sleep(interval)
+		} else {
+			c.Logger.Info("request sent successfully")
+			break
+		}
 	}
 }
 
