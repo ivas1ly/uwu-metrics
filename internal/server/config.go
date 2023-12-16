@@ -23,7 +23,7 @@ const (
 	defaultFileStoragePath      = "/tmp/metrics-db.json"
 	defaultFileRestore          = true
 	defaultFilePerm             = 0666
-	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?ssmode=disable"
+	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?sslmode=disable"
 	defaultDatabaseConnTimeout  = 10 * time.Second
 	defaultDatabaseConnAttempts = 3
 )
