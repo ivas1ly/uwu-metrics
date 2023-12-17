@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
@@ -23,7 +24,7 @@ func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) p
 	}
 }
 
-func (fs *fileStorage) Save() error {
+func (fs *fileStorage) Save(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_WRONLY|os.O_CREATE, fs.perm)
 	if err != nil {
 		return err
@@ -42,7 +43,7 @@ func (fs *fileStorage) Save() error {
 	return nil
 }
 
-func (fs *fileStorage) Restore() error {
+func (fs *fileStorage) Restore(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_RDONLY|os.O_CREATE, fs.perm)
 	if err != nil {
 		return err

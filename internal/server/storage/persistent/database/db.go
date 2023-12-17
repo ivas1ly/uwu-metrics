@@ -36,10 +36,8 @@ func NewDBStorage(storage memory.Storage, db *postgres.DB, connTimeout time.Dura
 	}
 }
 
-func (ds *dbStorage) Save() error {
+func (ds *dbStorage) Save(ctx context.Context) error {
 	metrics := ds.memoryStorage.GetMetrics()
-
-	ctx := context.Background()
 
 	withTimeout, cancel := context.WithTimeout(ctx, ds.timeout)
 	defer cancel()
@@ -65,7 +63,7 @@ func (ds *dbStorage) Save() error {
 		batch.Queue(saveCounter, id, "counter", metric, nil)
 	}
 
-	results := tx.SendBatch(withTimeout, batch)
+	results := tx.SendBatch(ctx, batch)
 
 	// check one affected row
 	ct, err := results.Exec()
@@ -86,17 +84,12 @@ func (ds *dbStorage) Save() error {
 	return nil
 }
 
-func (ds *dbStorage) Restore() error {
+func (ds *dbStorage) Restore(ctx context.Context) error {
 	var metrics entity.Metrics
 	metrics.Counter = make(map[string]int64)
 	metrics.Gauge = make(map[string]float64)
 
-	ctx := context.Background()
-
-	withTimeout, cancel := context.WithTimeout(ctx, ds.timeout)
-	defer cancel()
-
-	rows, err := ds.db.Pool.Query(withTimeout, getMetrics)
+	rows, err := ds.db.Pool.Query(ctx, getMetrics)
 	if err != nil {
 		return err
 	}

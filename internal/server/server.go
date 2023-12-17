@@ -32,6 +32,12 @@ func Run(cfg *Config) {
 
 	ctx := context.Background()
 
+	withCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	ctxDB, cancelDB := context.WithTimeout(ctx, defaultDatabaseConnTimeout)
+	defer cancelDB()
+
 	memStorage := memory.NewMemStorage()
 
 	var persistentStorage persistent.Storage
@@ -46,13 +52,13 @@ func Run(cfg *Config) {
 
 		err = migrate.RunMigrations(cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
 		if err != nil {
-			log.Fatal("can't run migrations", zap.Error(err))
+			log.Panic("can't run migrations", zap.Error(err))
 		}
 		log.Info("migrations up success", zap.String("status", "OK"))
 
-		db, err = postgres.New(ctx, cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
+		db, err = postgres.New(ctxDB, cfg.DatabaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
 		if err != nil {
-			log.Fatal("can't connect to database", zap.Error(err))
+			log.Panic("can't connect to database", zap.Error(err))
 		}
 		defer db.Close()
 
@@ -60,7 +66,7 @@ func Run(cfg *Config) {
 	}
 
 	if cfg.Restore && cfg.FileStoragePath != "" && db == nil {
-		if err = persistentStorage.Restore(); err != nil {
+		if err = persistentStorage.Restore(ctxDB); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))
 		} else {
 			log.Info("file restored", zap.String("file", cfg.FileStoragePath))
@@ -68,7 +74,7 @@ func Run(cfg *Config) {
 	}
 
 	if db != nil && cfg.Restore {
-		if err = persistentStorage.Restore(); err != nil {
+		if err = persistentStorage.Restore(ctxDB); err != nil {
 			log.Info("failed to restore metrics from database", zap.String("error", err.Error()))
 		} else {
 			log.Info("metrics restored from database")
@@ -83,7 +89,7 @@ func Run(cfg *Config) {
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
-		router.Use(writesync.New(log, persistentStorage))
+		router.Use(writesync.New(ctxDB, log, persistentStorage))
 	}
 
 	handlers.NewRoutes(router, memStorage, log)
@@ -93,8 +99,6 @@ func Run(cfg *Config) {
 		http.NotFound(w, r)
 	}))
 
-	withCancel, cancel := context.WithCancel(ctx)
-	defer cancel()
 	if cfg.FileStoragePath != "" && cfg.StoreInterval > 0 {
 		go writeMetricsAsync(withCancel, persistentStorage, cfg.StoreInterval, log)
 	}
@@ -103,8 +107,6 @@ func Run(cfg *Config) {
 		if db != nil {
 			log.Info("check database connection")
 
-			ctxDB, cancelDB := context.WithTimeout(context.Background(), defaultDatabaseConnTimeout)
-			defer cancelDB()
 			err = db.Ping(ctxDB)
 			if err != nil {
 				log.Info("can't ping database", zap.Error(err))
@@ -130,7 +132,7 @@ func Run(cfg *Config) {
 	// stop writeMetricsAsync job
 	cancel()
 
-	if err := persistentStorage.Save(); err != nil {
+	if err = persistentStorage.Save(ctxDB); err != nil {
 		log.Info("can't save metrics before shutting down", zap.Error(err))
 	} else {
 		log.Info("all metrics saved successfully")
@@ -181,13 +183,16 @@ func writeMetricsAsync(ctx context.Context, storage persistent.Storage, interval
 
 	log.Info("start persist metrics job", zap.Int("interval", interval))
 
+	withTimeout, cancel := context.WithTimeout(ctx, defaultDatabaseConnTimeout)
+	defer cancel()
+
 	for {
 		select {
 		case <-ctx.Done():
 			log.Info("received done context")
 			return
 		case st := <-saveTicker.C:
-			if err := storage.Save(); err != nil {
+			if err := storage.Save(withTimeout); err != nil {
 				log.Info("[ERROR] ticker can't save metrics with interval",
 					zap.Int("interval", interval), zap.Error(err))
 			}

@@ -24,11 +24,8 @@ func New(ctx context.Context, connString string, connAttempts int, connTimeout t
 		return nil, fmt.Errorf("can't create new connection pool: %w", err)
 	}
 
-	withTimeout, cancel := context.WithTimeout(ctx, connTimeout)
-	defer cancel()
-
 	err = retryWithAttempts(func() error {
-		if err = pool.Ping(withTimeout); err != nil {
+		if err = pool.Ping(ctx); err != nil {
 			return fmt.Errorf("failed to ping database: %w", err)
 		}
 		return nil

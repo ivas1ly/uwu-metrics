@@ -1,6 +1,8 @@
 package persistent
 
+import "context"
+
 type Storage interface {
-	Save() error
-	Restore() error
+	Save(ctx context.Context) error
+	Restore(ctx context.Context) error
 }
