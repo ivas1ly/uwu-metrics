@@ -65,7 +65,7 @@ func NewConfig() *Config {
 	}
 
 	// check store interval value
-	if *si <= 0 {
+	if *si < 0 {
 		cfg.StoreInterval = defaultStoreInterval
 	} else {
 		cfg.StoreInterval = *si
