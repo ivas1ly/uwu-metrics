@@ -13,8 +13,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
+	"github.com/ivas1ly/uwu-metrics/db/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
-	"github.com/ivas1ly/uwu-metrics/internal/lib/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
