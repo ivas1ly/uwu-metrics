@@ -125,7 +125,7 @@ func Run(cfg *Config) {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
-	if err := runServer(ctx, cfg.Endpoint, router, log); err != nil {
+	if err = runServer(ctx, cfg.Endpoint, router, log); err != nil {
 		log.Info("unexpected server error", zap.Error(err))
 	}
 
