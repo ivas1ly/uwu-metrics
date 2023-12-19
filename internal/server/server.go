@@ -43,7 +43,7 @@ func Run(cfg Config) {
 
 	RestoreMetrics(ctx, log, cfg, persistentStorage, db)
 
-	router := NewRouter(log, memStorage)
+	router := NewRouter(memStorage, db, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
@@ -54,8 +54,6 @@ func Run(cfg Config) {
 		log.Info("all data will be saved asynchronously", zap.Int("store interval", cfg.StoreInterval))
 		go writeMetricsAsync(withCancel, log, persistentStorage, cfg.StoreInterval)
 	}
-
-	router.Get("/ping", pingDB(ctx, log, db))
 
 	notifyCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -15,14 +14,17 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
-func NewRouter(log *zap.Logger, ms memory.Storage) *chi.Mux {
+func NewRouter(ms memory.Storage, db *postgres.DB, log *zap.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Compress(defaultCompressLevel))
+	// an error occurs here, can't use "middleware" package name for my own middlewares
 	router.Use(decompress.New(log))
 	router.Use(reqlogger.New(log))
 
 	handlers.NewRoutes(router, ms, log)
+
+	router.Get("/ping", pingDB(log, db))
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Info("route not found :(", zap.String("path", r.URL.Path))
@@ -32,12 +34,12 @@ func NewRouter(log *zap.Logger, ms memory.Storage) *chi.Mux {
 	return router
 }
 
-func pingDB(ctx context.Context, log *zap.Logger, db *postgres.DB) http.HandlerFunc {
+func pingDB(log *zap.Logger, db *postgres.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if db != nil {
 			log.Info("check database connection")
 
-			err := db.Pool.Ping(ctx)
+			err := db.Pool.Ping(r.Context())
 			if err != nil {
 				log.Info("can't ping database", zap.Error(err))
 				w.WriteHeader(http.StatusInternalServerError)
