@@ -47,7 +47,7 @@ func Run(cfg Config) {
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
-		router.Use(writesync.New(ctx, log, persistentStorage))
+		router.Use(writesync.New(persistentStorage, log))
 	}
 
 	if cfg.FileStoragePath != "" && cfg.StoreInterval > 0 {

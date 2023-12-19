@@ -1,7 +1,6 @@
 package writesync
 
 import (
-	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -16,7 +15,7 @@ var (
 	retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 )
 
-func New(ctx context.Context, log *zap.Logger, storage persistent.Storage) func(next http.Handler) http.Handler {
+func New(storage persistent.Storage, log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "write sync"))
 
@@ -35,7 +34,7 @@ func New(ctx context.Context, log *zap.Logger, storage persistent.Storage) func(
 				strings.Contains(header, "application/json") {
 
 				for _, interval := range retryIntervals {
-					err := storage.Save(ctx)
+					err := storage.Save(r.Context())
 					if err != nil {
 						l.Info("can't save metrics, trying to save metrics again", zap.Error(err),
 							zap.Duration("with interval", interval))
