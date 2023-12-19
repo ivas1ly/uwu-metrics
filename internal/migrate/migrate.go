@@ -11,14 +11,14 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/db"
+	"github.com/ivas1ly/uwu-metrics/migrations"
 )
 
 func RunMigrations(connString string, connAttempts int, connTimeout time.Duration) error {
 	var m *migrate.Migrate
 	var err error
 
-	dir, err := iofs.New(db.Migrations, "migrations")
+	dir, err := iofs.New(migrations.Migrations, ".")
 	if err != nil {
 		return fmt.Errorf("failed to return an iofs driver: %w", err)
 	}

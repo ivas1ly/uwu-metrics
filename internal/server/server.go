@@ -12,9 +12,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/db/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
+	"github.com/ivas1ly/uwu-metrics/internal/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/writesync"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
