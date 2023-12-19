@@ -36,8 +36,8 @@ type Config struct {
 	Restore         bool
 }
 
-func NewConfig() *Config {
-	cfg := &Config{}
+func NewConfig() Config {
+	cfg := Config{}
 
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
 		net.JoinHostPort(defaultHost, defaultPort), net.JoinHostPort("", defaultPort))

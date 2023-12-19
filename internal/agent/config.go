@@ -22,8 +22,8 @@ type Config struct {
 	ReportInterval time.Duration
 }
 
-func NewConfig() *Config {
-	cfg := &Config{}
+func NewConfig() Config {
+	cfg := Config{}
 
 	endpointHostUsage := fmt.Sprintf("HTTP server report endpoint, example: %q", defaultEndpointHost)
 	flag.StringVar(&cfg.EndpointHost, "a", defaultEndpointHost, endpointHostUsage)

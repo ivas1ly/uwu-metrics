@@ -20,7 +20,7 @@ const (
 	maxRandomValue = 100000
 )
 
-func Run(cfg *Config) {
+func Run(cfg Config) {
 	log := logger.New(defaultLogLevel).
 		With(zap.String("app", "agent"))
 

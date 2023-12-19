@@ -22,7 +22,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
 )
 
-func Run(cfg *Config) {
+func Run(cfg Config) {
 	log := logger.New(defaultLogLevel).
 		With(zap.String("app", "server"))
 
@@ -135,7 +135,7 @@ func writeMetricsAsync(ctx context.Context, log *zap.Logger, storage persistent.
 	}
 }
 
-func SetupPersistentStorage(ctx context.Context, log *zap.Logger, cfg *Config,
+func SetupPersistentStorage(ctx context.Context, log *zap.Logger, cfg Config,
 	ms memory.Storage) (persistent.Storage, *postgres.DB) {
 	var persistentStorage persistent.Storage
 
@@ -172,7 +172,7 @@ func SetupPersistentStorage(ctx context.Context, log *zap.Logger, cfg *Config,
 	return persistentStorage, db
 }
 
-func RestoreMetrics(ctx context.Context, log *zap.Logger, cfg *Config, ps persistent.Storage, db *postgres.DB) {
+func RestoreMetrics(ctx context.Context, log *zap.Logger, cfg Config, ps persistent.Storage, db *postgres.DB) {
 	if cfg.Restore && cfg.FileStoragePath != "" && db == nil {
 		if err := ps.Restore(ctx); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))
