@@ -25,7 +25,7 @@ const (
 )
 
 func TestGzipMiddleware(t *testing.T) {
-	log := logger.New(defaultLogLevel).
+	log := logger.New(defaultLogLevel, zap.NewDevelopmentConfig()).
 		With(zap.String("app", "test"))
 
 	r := chi.NewRouter()

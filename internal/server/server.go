@@ -23,7 +23,7 @@ import (
 )
 
 func Run(cfg Config) {
-	log := logger.New(defaultLogLevel).
+	log := logger.New(defaultLogLevel, logger.NewDefaultLoggerConfig()).
 		With(zap.String("app", "server"))
 
 	ctx := context.Background()
