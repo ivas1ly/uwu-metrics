@@ -37,6 +37,8 @@ type Config struct {
 }
 
 func NewConfig() Config {
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
 	cfg := Config{}
 
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",

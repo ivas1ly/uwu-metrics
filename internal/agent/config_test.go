@@ -9,10 +9,10 @@ import (
 
 func TestConfig(t *testing.T) {
 	t.Run("check default values", func(t *testing.T) {
-		config := NewConfig()
+		cfg := NewConfig()
 
-		assert.Equal(t, config.ReportInterval, defaultReportInterval*time.Second)
-		assert.Equal(t, config.PollInterval, defaultPollInterval*time.Second)
-		assert.Equal(t, config.EndpointHost, defaultEndpointHost)
+		assert.Equal(t, cfg.ReportInterval, defaultReportInterval*time.Second)
+		assert.Equal(t, cfg.PollInterval, defaultPollInterval*time.Second)
+		assert.Equal(t, cfg.EndpointHost, defaultEndpointHost)
 	})
 }
