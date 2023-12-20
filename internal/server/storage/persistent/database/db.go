@@ -13,7 +13,6 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 )
 
-// upsert https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT
 const (
 	//nolint:lll // const query
 	saveGauge = "INSERT INTO metrics (id, mtype, mdelta, mvalue) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET mvalue = EXCLUDED.mvalue;"

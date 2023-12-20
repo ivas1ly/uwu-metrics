@@ -41,7 +41,7 @@ func Run(cfg Config) {
 		defer db.Close()
 	}
 
-	restoreMetrics(ctx, log, cfg, persistentStorage, db)
+	restoreMetrics(ctx, cfg, persistentStorage, db, log)
 
 	router := NewRouter(memStorage, db, log)
 
@@ -183,7 +183,7 @@ func newDBStorage(ctx context.Context, databaseDSN string, ms memory.Storage,
 	return persistentStorage, db
 }
 
-func restoreMetrics(ctx context.Context, log *zap.Logger, cfg Config, ps persistent.Storage, db *postgres.DB) {
+func restoreMetrics(ctx context.Context, cfg Config, ps persistent.Storage, db *postgres.DB, log *zap.Logger) {
 	if cfg.Restore && cfg.FileStoragePath != "" && db == nil {
 		if err := ps.Restore(ctx); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))

@@ -24,7 +24,7 @@ func NewRouter(ms memory.Storage, db *postgres.DB, log *zap.Logger) *chi.Mux {
 
 	handlers.NewRoutes(router, ms, log)
 
-	router.Get("/ping", pingDB(log, db))
+	router.Get("/ping", pingDB(db, log))
 
 	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Info("route not found :(", zap.String("path", r.URL.Path))
@@ -34,7 +34,7 @@ func NewRouter(ms memory.Storage, db *postgres.DB, log *zap.Logger) *chi.Mux {
 	return router
 }
 
-func pingDB(log *zap.Logger, db *postgres.DB) http.HandlerFunc {
+func pingDB(db *postgres.DB, log *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if db != nil {
 			log.Info("check database connection")
