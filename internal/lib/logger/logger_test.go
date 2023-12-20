@@ -24,9 +24,6 @@ func TestLogger(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	encoderCfg := zap.NewProductionEncoderConfig()
-	encoderCfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
-
 	loggerCfg := NewDefaultLoggerConfig()
 	loggerCfg.ErrorOutputPaths = []string{"memory://"}
 	loggerCfg.OutputPaths = []string{"memory://"}
