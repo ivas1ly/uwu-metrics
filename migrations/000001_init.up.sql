@@ -1,11 +1,12 @@
 BEGIN TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS metrics (
-    id TEXT NOT NULL,
+    id TEXT PRIMARY KEY,
     mtype TEXT NOT NULL,
     mdelta BIGINT NULL,
-    mvalue DOUBLE PRECISION NULL,
-    PRIMARY KEY (id)
+    mvalue DOUBLE PRECISION NULL
 );
+
+CREATE INDEX IF NOT EXISTS metrics_id_idx ON metrics (id);
 
 COMMIT;
