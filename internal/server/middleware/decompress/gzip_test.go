@@ -51,24 +51,28 @@ func TestGzipMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 
 		resp, respBody := testRequest(t, ts, http.MethodGet, "/", "gzip", bytes.NewBuffer(buf.Bytes()))
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, testData, respBody)
 	})
 
 	t.Run("can't decompress body", func(t *testing.T) {
 		resp, respBody := testRequest(t, ts, http.MethodGet, "/", "gzip", bytes.NewBuffer([]byte(testData)))
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 		assert.Equal(t, `{"message":"can't decompress"}`, strings.TrimSpace(respBody))
 	})
 
 	t.Run("without header", func(t *testing.T) {
 		resp, respBody := testRequest(t, ts, http.MethodGet, "/", "", bytes.NewBuffer([]byte(testData)))
+		defer resp.Body.Close()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, testData, respBody)
 	})
 }
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path string, header string, body io.Reader) (*http.Response, string) {
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, header string,
+	body io.Reader) (*http.Response, string) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTestClientTimeout)
 	defer cancel()
 

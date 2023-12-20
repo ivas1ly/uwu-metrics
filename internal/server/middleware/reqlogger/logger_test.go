@@ -38,6 +38,7 @@ func TestLoggerMiddlewaware(t *testing.T) {
 	defer ts.Close()
 
 	resp, respBody := testRequest(t, ts, http.MethodGet, "/", nil)
+	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, testText, respBody)
 }
