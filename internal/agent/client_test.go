@@ -78,19 +78,34 @@ func TestClientSendReport(t *testing.T) {
 
 	handlers.NewRoutes(router, storage, logger)
 
-	ts := httptest.NewServer(router)
-	defer ts.Close()
+	t.Run("with server", func(t *testing.T) {
+		ts := httptest.NewServer(router)
+		defer ts.Close()
 
-	metrics := &Metrics{}
-	metrics.UpdateMetrics()
+		metrics := &Metrics{}
+		metrics.UpdateMetrics()
 
-	client := Client{
-		Metrics: metrics,
-		Logger:  zap.Must(zap.NewDevelopment()),
-		URL:     ts.URL + endpoint,
-	}
+		client := Client{
+			Metrics: metrics,
+			Logger:  zap.Must(zap.NewDevelopment()),
+			URL:     ts.URL + endpoint,
+		}
 
-	assert.NoError(t, client.SendReport())
+		assert.NoError(t, client.SendReport())
+	})
+
+	t.Run("metrics server is not working", func(t *testing.T) {
+		metrics := &Metrics{}
+		metrics.UpdateMetrics()
+
+		client := Client{
+			Metrics: metrics,
+			Logger:  zap.Must(zap.NewDevelopment()),
+			URL:     "",
+		}
+
+		assert.Error(t, client.SendReport())
+	})
 }
 
 type testStorage struct {

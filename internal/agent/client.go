@@ -77,6 +77,9 @@ func (c *Client) SendReport() error {
 			break
 		}
 	}
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
