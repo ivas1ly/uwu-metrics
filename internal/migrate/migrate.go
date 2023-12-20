@@ -40,10 +40,18 @@ func RunMigrations(connString string, connAttempts int, connTimeout time.Duratio
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("can't up migrations: %w", err)
 	}
-	defer m.Close()
+	defer func(m *migrate.Migrate) {
+		sourceErr, dbErr := m.Close()
+		if sourceErr != nil {
+			zap.L().Info("can't close the source")
+		}
+		if dbErr != nil {
+			zap.L().Info("can't close the database")
+		}
+	}(m)
 
 	if errors.Is(err, migrate.ErrNoChange) {
-		zap.L().Info("OK, no change to DB schema")
+		zap.L().Info("no change to DB schema")
 		return nil
 	}
 
