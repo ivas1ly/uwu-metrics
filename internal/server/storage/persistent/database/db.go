@@ -14,11 +14,13 @@ import (
 )
 
 const (
-	//nolint:lll // const query
-	saveGauge = "INSERT INTO metrics (id, mtype, mdelta, mvalue) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET mvalue = EXCLUDED.mvalue;"
-	//nolint:lll // const query
-	saveCounter = "INSERT INTO metrics (id, mtype, mdelta, mvalue) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET mdelta = EXCLUDED.mdelta;"
-	getMetrics  = "SELECT id, mtype, mdelta, mvalue FROM metrics;"
+	saveGauge = `INSERT INTO metrics (id, mtype, mdelta, mvalue)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id) DO UPDATE SET mvalue = EXCLUDED.mvalue;`
+	saveCounter = `INSERT INTO metrics (id, mtype, mdelta, mvalue)
+VALUES ($1, $2, $3, $4) ON CONFLICT (id)
+DO UPDATE SET mdelta = EXCLUDED.mdelta;`
+	getMetrics = "SELECT id, mtype, mdelta, mvalue FROM metrics;"
 )
 
 type dbStorage struct {
