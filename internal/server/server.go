@@ -37,7 +37,7 @@ func Run(cfg Config) {
 
 	memStorage := memory.NewMemStorage()
 
-	persistentStorage, db, err := setupPersistentStorage(ctxDB, log, cfg, memStorage)
+	persistentStorage, db, err := setupPersistentStorage(ctxDB, cfg, memStorage, log)
 	if err != nil {
 		log.Info("can't setup persistent storage", zap.Error(err))
 	}
@@ -140,9 +140,9 @@ func writeMetricsAsync(ctx context.Context, log *zap.Logger, storage persistent.
 	}
 }
 
-//nolint:whitespace //necessary leading newline
-func setupPersistentStorage(ctx context.Context, log *zap.Logger, cfg Config,
-	ms memory.Storage) (ps persistent.Storage, db *postgres.DB, err error) {
+//nolint:whitespace //necessary leading newline, line is too long, otherwise warning from lll linter
+func setupPersistentStorage(ctx context.Context, cfg Config,
+	ms memory.Storage, log *zap.Logger) (ps persistent.Storage, db *postgres.DB, err error) {
 
 	if cfg.DatabaseDSN != "" {
 		return newDBStorage(ctx, cfg.DatabaseDSN, ms, log)
