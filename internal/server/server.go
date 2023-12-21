@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -36,12 +37,18 @@ func Run(cfg Config) {
 
 	memStorage := memory.NewMemStorage()
 
-	persistentStorage, db := setupPersistentStorage(ctxDB, log, cfg, memStorage)
+	persistentStorage, db, err := setupPersistentStorage(ctxDB, log, cfg, memStorage)
+	if err != nil {
+		log.Info("can't setup persistent storage", zap.Error(err))
+	}
 	if db != nil {
 		defer db.Close()
 	}
 
-	restoreMetrics(ctx, cfg, persistentStorage, db, log)
+	err = restoreMetrics(ctx, cfg, persistentStorage, db, log)
+	if err != nil {
+		log.Info("can't restore metrics from persistent storage", zap.Error(err))
+	}
 
 	router := NewRouter(memStorage, db, log)
 
@@ -135,17 +142,17 @@ func writeMetricsAsync(ctx context.Context, log *zap.Logger, storage persistent.
 
 //nolint:whitespace //necessary leading newline
 func setupPersistentStorage(ctx context.Context, log *zap.Logger, cfg Config,
-	ms memory.Storage) (ps persistent.Storage, db *postgres.DB) {
+	ms memory.Storage) (ps persistent.Storage, db *postgres.DB, err error) {
 
 	if cfg.DatabaseDSN != "" {
 		return newDBStorage(ctx, cfg.DatabaseDSN, ms, log)
 	}
 
 	if cfg.FileStoragePath != "" {
-		return newFileStorage(cfg.FileStoragePath, ms, log), nil
+		return newFileStorage(cfg.FileStoragePath, ms, log), nil, nil
 	}
 
-	return
+	return nil, nil, fmt.Errorf("can't setup persistent storage")
 }
 
 func newFileStorage(fileStoragePath string, ms memory.Storage, log *zap.Logger) persistent.Storage {
@@ -155,7 +162,7 @@ func newFileStorage(fileStoragePath string, ms memory.Storage, log *zap.Logger) 
 }
 
 func newDBStorage(ctx context.Context, databaseDSN string, ms memory.Storage,
-	log *zap.Logger) (persistent.Storage, *postgres.DB) {
+	log *zap.Logger) (persistent.Storage, *postgres.DB, error) {
 	var db *postgres.DB
 	var err error
 
@@ -163,40 +170,44 @@ func newDBStorage(ctx context.Context, databaseDSN string, ms memory.Storage,
 
 	err = migrate.RunMigrations(databaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
 	if err != nil {
-		log.Panic("can't run migrations", zap.Error(err))
+		log.Info("can't run migrations", zap.Error(err))
+		return nil, nil, err
 	}
 	log.Info("migrations up success", zap.String("status", "OK"))
 
 	db, err = postgres.New(ctx, databaseDSN, defaultDatabaseConnAttempts, defaultDatabaseConnTimeout)
 	if err != nil {
-		log.Panic("can't connect to database", zap.Error(err))
+		log.Info("can't connect to database", zap.Error(err))
+		return nil, nil, err
 	}
 
 	err = db.Pool.Ping(ctx)
 	if err != nil {
-		log.Panic("can't ping database", zap.Error(err))
+		log.Info("can't ping database", zap.Error(err))
+		return nil, nil, err
 	}
 
 	log.Info("all data will be saved to database")
 	persistentStorage := database.NewDBStorage(ms, db, defaultDatabaseConnTimeout)
 
-	return persistentStorage, db
+	return persistentStorage, db, nil
 }
 
-func restoreMetrics(ctx context.Context, cfg Config, ps persistent.Storage, db *postgres.DB, log *zap.Logger) {
+func restoreMetrics(ctx context.Context, cfg Config, ps persistent.Storage, db *postgres.DB, log *zap.Logger) error {
 	if cfg.Restore && cfg.FileStoragePath != "" && db == nil {
 		if err := ps.Restore(ctx); err != nil {
 			log.Info("failed to restore metrics from file, new file created", zap.String("error", err.Error()))
-		} else {
-			log.Info("file restored", zap.String("file", cfg.FileStoragePath))
+			return err
 		}
+		log.Info("file restored", zap.String("file", cfg.FileStoragePath))
 	}
 
 	if db != nil && cfg.Restore {
 		if err := ps.Restore(ctx); err != nil {
 			log.Info("failed to restore metrics from database", zap.String("error", err.Error()))
-		} else {
-			log.Info("metrics restored from database")
+			return err
 		}
+		log.Info("metrics restored from database")
 	}
+	return nil
 }
