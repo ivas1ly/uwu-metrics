@@ -1,8 +1,6 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -24,33 +22,9 @@ func NewRouter(ms memory.Storage, db *postgres.DB, log *zap.Logger) *chi.Mux {
 
 	handlers.NewRoutes(router, ms, log)
 
-	router.Get("/ping", pingDB(db, log))
+	router.Get("/ping", handlers.PingDB(db, log))
 
-	router.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("route not found :(", zap.String("path", r.URL.Path))
-		http.NotFound(w, r)
-	}))
+	router.Handle("/*", handlers.NotFound(log))
 
 	return router
-}
-
-func pingDB(db *postgres.DB, log *zap.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if db != nil {
-			log.Info("check database connection")
-
-			err := db.Pool.Ping(r.Context())
-			if err != nil {
-				log.Info("can't ping database", zap.Error(err))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			log.Info("database ping OK")
-			w.WriteHeader(http.StatusOK)
-		} else {
-			log.Info("database connection string is empty, nothing to ping")
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	}
 }
