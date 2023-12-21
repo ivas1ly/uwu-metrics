@@ -13,6 +13,40 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 )
 
+/*
+EXPLAIN ANALYZE
+INSERT INTO metrics (id, mtype, mdelta, mvalue)
+VALUES ('OtherSys', 'gauge', null, 1010)
+ON CONFLICT (id) DO UPDATE SET mvalue = EXCLUDED.mvalue;
+                                          QUERY PLAN
+-----------------------------------------------------------------------------------------------
+ Insert on metrics  (cost=0.00..0.01 rows=0 width=0) (actual time=0.074..0.074 rows=0 loops=1)
+   Conflict Resolution: UPDATE
+   Conflict Arbiter Indexes: metrics_pkey
+   Tuples Inserted: 0
+   Conflicting Tuples: 1
+   ->  Result  (cost=0.00..0.01 rows=1 width=80) (actual time=0.001..0.002 rows=1 loops=1)
+ Planning Time: 0.069 ms
+ Execution Time: 0.089 ms
+(8 rows)
+
+EXPLAIN ANALYZE
+INSERT INTO metrics (id, mtype, mdelta, mvalue)
+VALUES ('PollCount', 'counter', 15, null)
+ON CONFLICT (id) DO UPDATE SET mdelta = EXCLUDED.mdelta;
+                                          QUERY PLAN
+-----------------------------------------------------------------------------------------------
+ Insert on metrics  (cost=0.00..0.01 rows=0 width=0) (actual time=0.071..0.071 rows=0 loops=1)
+   Conflict Resolution: UPDATE
+   Conflict Arbiter Indexes: metrics_pkey
+   Tuples Inserted: 0
+   Conflicting Tuples: 1
+   ->  Result  (cost=0.00..0.01 rows=1 width=80) (actual time=0.002..0.002 rows=1 loops=1)
+ Planning Time: 0.117 ms
+ Execution Time: 0.087 ms
+(8 rows)
+*/
+
 const (
 	saveGauge = `INSERT INTO metrics (id, mtype, mdelta, mvalue)
 VALUES ($1, $2, $3, $4)
@@ -40,10 +74,7 @@ func NewDBStorage(storage memory.Storage, db *postgres.DB, connTimeout time.Dura
 func (ds *dbStorage) Save(ctx context.Context) error {
 	metrics := ds.memoryStorage.GetMetrics()
 
-	withTimeout, cancel := context.WithTimeout(ctx, ds.timeout)
-	defer cancel()
-
-	tx, err := ds.db.Pool.Begin(withTimeout)
+	tx, err := ds.db.Pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -77,7 +108,7 @@ func (ds *dbStorage) Save(ctx context.Context) error {
 		return err
 	}
 
-	err = tx.Commit(withTimeout)
+	err = tx.Commit(ctx)
 	if err != nil {
 		return err
 	}
