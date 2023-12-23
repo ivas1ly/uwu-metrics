@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func New(level string) *zap.Logger {
+func New(level string, cfg zap.Config) *zap.Logger {
 	var logLevel zapcore.Level
 
 	switch strings.ToLower(level) {
@@ -26,21 +26,8 @@ func New(level string) *zap.Logger {
 		logLevel = zap.InfoLevel
 	}
 
-	encoderCfg := zap.NewProductionEncoderConfig()
-	encoderCfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
-
-	zapConfig := zap.Config{
-		Level:             zap.NewAtomicLevelAt(logLevel),
-		Development:       false,
-		DisableCaller:     false,
-		DisableStacktrace: false,
-		Sampling:          nil,
-		Encoding:          "json",
-		EncoderConfig:     encoderCfg,
-		OutputPaths:       []string{"stdout"},
-		ErrorOutputPaths:  []string{"stdout"},
-		InitialFields:     nil,
-	}
+	zapConfig := cfg
+	zapConfig.Level = zap.NewAtomicLevelAt(logLevel)
 
 	logger := zap.Must(zapConfig.Build())
 	defer func() {
@@ -53,4 +40,23 @@ func New(level string) *zap.Logger {
 	zap.ReplaceGlobals(logger)
 
 	return logger
+}
+
+func NewDefaultLoggerConfig() zap.Config {
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+
+	loggerCfg := zap.Config{
+		Development:       false,
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Sampling:          nil,
+		Encoding:          "json",
+		EncoderConfig:     encoderCfg,
+		OutputPaths:       []string{"stdout"},
+		ErrorOutputPaths:  []string{"stdout"},
+		InitialFields:     nil,
+	}
+
+	return loggerCfg
 }

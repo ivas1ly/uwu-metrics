@@ -28,13 +28,13 @@ const (
 
 type metricsHandler struct {
 	storage memory.Storage
-	logger  *zap.Logger
+	log     *zap.Logger
 }
 
-func NewRoutes(router *chi.Mux, storage memory.Storage, logger *zap.Logger) {
+func NewRoutes(router *chi.Mux, storage memory.Storage, log *zap.Logger) {
 	h := &metricsHandler{
 		storage: storage,
-		logger:  logger.With(zap.String("handler", "metrics")),
+		log:     log.With(zap.String("handler", "metrics")),
 	}
 
 	router.Get("/", h.webpage)
@@ -46,6 +46,9 @@ func NewRoutes(router *chi.Mux, storage memory.Storage, logger *zap.Logger) {
 		r.Post("/", h.valueJSON)
 		r.Get("/{type}/{name}", h.valueURL)
 	})
+	router.Route("/updates", func(r chi.Router) {
+		r.Post("/", h.updatesJSON)
+	})
 }
 
 func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
@@ -53,14 +56,14 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
-		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
+		h.log.Info("can't get metric type in url", zap.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
 
 	mName := chi.URLParam(r, "name")
 	if mName == "" {
-		h.logger.Warn("can't get metric name in url", zap.String("path", r.URL.Path))
+		h.log.Info("can't get metric name in url", zap.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
@@ -71,7 +74,7 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	case entity.GaugeType:
 		value, err := strconv.ParseFloat(mValue, 64)
 		if err != nil {
-			h.logger.Error(IncorrectMetricValueMsg, zap.String("error", err.Error()))
+			h.log.Info(IncorrectMetricValueMsg, zap.String("error", err.Error()))
 			http.Error(w, fmt.Sprintf("%s %q", IncorrectMetricValueMsg, mValue), http.StatusBadRequest)
 			return
 		}
@@ -79,22 +82,22 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	case entity.CounterType:
 		value, err := strconv.ParseInt(mValue, 10, 64)
 		if err != nil {
-			h.logger.Error(IncorrectMetricValueMsg, zap.String("error", err.Error()))
+			h.log.Info(IncorrectMetricValueMsg, zap.String("error", err.Error()))
 			http.Error(w, fmt.Sprintf("%s %q", IncorrectMetricValueMsg, mValue), http.StatusBadRequest)
 			return
 		}
 		h.storage.UpdateCounter(mName, value)
 	default:
-		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", mType))
+		h.log.Info(UnknownMetricTypeMsg, zap.String("type", mType))
 		http.Error(w, fmt.Sprintf("%s %q", UnknownMetricTypeMsg, mType), http.StatusBadRequest)
 		return
 	}
 
-	h.logger.Info("metric saved",
+	h.log.Info("metric saved",
 		zap.String("type", mType),
 		zap.String("name", mName),
 		zap.String("value", mValue))
-	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
+	h.log.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -104,14 +107,14 @@ func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 
 	mType := strings.ToLower(chi.URLParam(r, "type"))
 	if mType == "" {
-		h.logger.Warn("can't get metric type in url", zap.String("path", r.URL.Path))
+		h.log.Info("can't get metric type in url", zap.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
 
 	mName := chi.URLParam(r, "name")
 	if mName == "" {
-		h.logger.Warn("can't get metric name in url", zap.String("path", r.URL.Path))
+		h.log.Info("can't get metric name in url", zap.String("path", r.URL.Path))
 		http.NotFound(w, r)
 		return
 	}
@@ -120,31 +123,31 @@ func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 	case entity.CounterType:
 		value, err := h.storage.GetCounter(mName)
 		if err != nil {
-			h.logger.Error("can't get counter value", zap.String("error", err.Error()))
+			h.log.Info("can't get counter value", zap.String("error", err.Error()))
 			http.NotFound(w, r)
 			return
 		}
 		_, err = w.Write([]byte(strconv.FormatInt(value, 10)))
 		if err != nil {
-			h.logger.Error("can't format counter value", zap.String("error", err.Error()))
+			h.log.Info("can't format counter value", zap.String("error", err.Error()))
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 	case entity.GaugeType:
 		value, err := h.storage.GetGauge(mName)
 		if err != nil {
-			h.logger.Error("can't get gauge value", zap.String("error", err.Error()))
+			h.log.Info("can't get gauge value", zap.String("error", err.Error()))
 			http.NotFound(w, r)
 			return
 		}
 		_, err = w.Write([]byte(strconv.FormatFloat(value, 'f', -1, 64)))
 		if err != nil {
-			h.logger.Error("can't format gauge value", zap.String("error", err.Error()))
+			h.log.Info("can't format gauge value", zap.String("error", err.Error()))
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 	default:
-		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", mType))
+		h.log.Info(UnknownMetricTypeMsg, zap.String("type", mType))
 		http.NotFound(w, r)
 		return
 	}
@@ -155,7 +158,7 @@ func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFS(&web.Templates, "templates/*.gohtml")
 	if err != nil {
-		h.logger.Error("can't parse template from fs", zap.String("error", err.Error()))
+		h.log.Info("can't parse template from fs", zap.String("error", err.Error()))
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -171,7 +174,7 @@ func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err = t.ExecuteTemplate(w, "index.gohtml", viewMap)
 	if err != nil {
-		h.logger.Error("can't execute template", zap.String("error", err.Error()))
+		h.log.Info("can't execute template", zap.String("error", err.Error()))
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -211,7 +214,7 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 	switch request.MType {
 	case entity.GaugeType:
 		if request.Value == nil {
-			h.logger.Error(EmptyMetricValueMsg, zap.String("type", request.MType))
+			h.log.Info(EmptyMetricValueMsg, zap.String("type", request.MType))
 			w.WriteHeader(http.StatusBadRequest)
 			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, request.MType)})
 			return
@@ -220,7 +223,7 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 
 		value, err := h.storage.GetGauge(request.ID)
 		if err != nil {
-			h.logger.Error("can't get updated value", zap.String("type", request.MType),
+			h.log.Info("can't get updated value", zap.String("type", request.MType),
 				zap.String("name", request.ID))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -234,7 +237,7 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 		})
 	case entity.CounterType:
 		if request.Delta == nil {
-			h.logger.Error(EmptyMetricValueMsg, zap.String("type", request.MType))
+			h.log.Info(EmptyMetricValueMsg, zap.String("type", request.MType))
 			w.WriteHeader(http.StatusBadRequest)
 			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, request.MType)})
 			return
@@ -243,7 +246,7 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 
 		value, err := h.storage.GetCounter(request.ID)
 		if err != nil {
-			h.logger.Error("can't get updated value", zap.String("type", request.MType),
+			h.log.Info("can't get updated value", zap.String("type", request.MType),
 				zap.String("name", request.ID))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -256,16 +259,70 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 			MType: request.MType,
 		})
 	default:
-		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", request.MType))
+		h.log.Info(UnknownMetricTypeMsg, zap.String("type", request.MType))
 		w.WriteHeader(http.StatusBadRequest)
 		render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, request.MType)})
 		return
 	}
 
-	h.logger.Info("metric saved",
+	h.log.Info("metric saved",
 		zap.String("type", request.MType),
 		zap.String("name", request.ID))
-	h.logger.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
+	h.log.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
+}
+
+func (h *metricsHandler) updatesJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var request []Metrics
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if errors.Is(err, io.EOF) {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "empty request body"})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "can't parse request body"})
+		return
+	}
+
+	for _, metric := range request {
+		errMsg, ok := checkRequestFields(metric)
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": strings.Join(errMsg, ", ")})
+			return
+		}
+
+		switch metric.MType {
+		case entity.GaugeType:
+			if metric.Value == nil {
+				h.log.Info(EmptyMetricValueMsg, zap.String("type", metric.MType))
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, metric.MType)})
+				return
+			}
+
+			h.storage.UpdateGauge(metric.ID, *metric.Value)
+		case entity.CounterType:
+			if metric.Delta == nil {
+				h.log.Info(EmptyMetricValueMsg, zap.String("type", metric.MType))
+				w.WriteHeader(http.StatusBadRequest)
+				render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", EmptyMetricValueMsg, metric.MType)})
+				return
+			}
+
+			h.storage.UpdateCounter(metric.ID, *metric.Delta)
+		default:
+			h.log.Info(UnknownMetricTypeMsg, zap.String("type", metric.MType))
+			w.WriteHeader(http.StatusBadRequest)
+			render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, metric.MType)})
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
@@ -296,7 +353,7 @@ func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 	case entity.GaugeType:
 		value, err := h.storage.GetGauge(request.ID)
 		if err != nil {
-			h.logger.Error(err.Error(), zap.String("type", request.MType))
+			h.log.Info(err.Error(), zap.String("type", request.MType))
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, render.M{"message": err.Error()})
 			return
@@ -311,7 +368,7 @@ func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 	case entity.CounterType:
 		value, err := h.storage.GetCounter(request.ID)
 		if err != nil {
-			h.logger.Error(err.Error(), zap.String("type", request.MType))
+			h.log.Info(err.Error(), zap.String("type", request.MType))
 			w.WriteHeader(http.StatusNotFound)
 			render.JSON(w, r, render.M{"message": err.Error()})
 			return
@@ -324,7 +381,7 @@ func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 			MType: request.MType,
 		})
 	default:
-		h.logger.Error(UnknownMetricTypeMsg, zap.String("type", request.MType))
+		h.log.Info(UnknownMetricTypeMsg, zap.String("type", request.MType))
 		w.WriteHeader(http.StatusBadRequest)
 		render.JSON(w, r, render.M{"message": fmt.Sprintf("%s %q", UnknownMetricTypeMsg, request.MType)})
 		return

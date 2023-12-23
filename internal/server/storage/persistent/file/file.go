@@ -1,17 +1,14 @@
 package file
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
+	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 )
-
-type PersistentStorage interface {
-	Save() error
-	Restore() error
-}
 
 type fileStorage struct {
 	memoryStorage memory.Storage
@@ -19,7 +16,7 @@ type fileStorage struct {
 	perm          os.FileMode
 }
 
-func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) PersistentStorage {
+func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) persistent.Storage {
 	return &fileStorage{
 		fileName:      fileName,
 		perm:          perm,
@@ -27,7 +24,7 @@ func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) P
 	}
 }
 
-func (fs *fileStorage) Save() error {
+func (fs *fileStorage) Save(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_WRONLY|os.O_CREATE, fs.perm)
 	if err != nil {
 		return err
@@ -46,7 +43,7 @@ func (fs *fileStorage) Save() error {
 	return nil
 }
 
-func (fs *fileStorage) Restore() error {
+func (fs *fileStorage) Restore(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_RDONLY|os.O_CREATE, fs.perm)
 	if err != nil {
 		return err

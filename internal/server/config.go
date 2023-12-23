@@ -10,30 +10,36 @@ import (
 )
 
 const (
-	defaultHost              = "localhost"
-	defaultPort              = "8080"
-	defaultReadTimeout       = 10 * time.Second
-	defaultReadHeaderTimeout = 5 * time.Second
-	defaultWriteTimeout      = 10 * time.Second
-	defaultIdleTimeout       = 1 * time.Minute
-	defaultShutdownTimeout   = 5 * time.Second
-	defaultCompressLevel     = 5
-	defaultLogLevel          = "info"
-	defaultStoreInterval     = 300
-	defaultFileStoragePath   = "/tmp/metrics-db.json"
-	defaultFileRestore       = true
-	defaultFilePerm          = 0666
+	defaultHost                 = "localhost"
+	defaultPort                 = "8080"
+	defaultReadTimeout          = 10 * time.Second
+	defaultReadHeaderTimeout    = 5 * time.Second
+	defaultWriteTimeout         = 10 * time.Second
+	defaultIdleTimeout          = 1 * time.Minute
+	defaultShutdownTimeout      = 5 * time.Second
+	defaultCompressLevel        = 5
+	defaultLogLevel             = "info"
+	defaultStoreInterval        = 300
+	defaultFileStoragePath      = "/tmp/metrics-db.json"
+	defaultFileRestore          = true
+	defaultFilePerm             = 0666
+	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?sslmode=disable"
+	defaultDatabaseConnTimeout  = 10 * time.Second
+	defaultDatabaseConnAttempts = 3
 )
 
 type Config struct {
 	Endpoint        string
 	FileStoragePath string
+	DatabaseDSN     string
 	StoreInterval   int
-	FileRestore     bool
+	Restore         bool
 }
 
-func NewConfig() *Config {
-	cfg := &Config{}
+func NewConfig() Config {
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+
+	cfg := Config{}
 
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
 		net.JoinHostPort(defaultHost, defaultPort), net.JoinHostPort("", defaultPort))
@@ -49,7 +55,10 @@ func NewConfig() *Config {
 
 	fileRestoreUsage := fmt.Sprintf("load or not previously saved values from the specified file, "+
 		"example: \"%t\"", defaultFileRestore)
-	flag.BoolVar(&cfg.FileRestore, "r", defaultFileRestore, fileRestoreUsage)
+	flag.BoolVar(&cfg.Restore, "r", defaultFileRestore, fileRestoreUsage)
+
+	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", exampleDatabaseDSN)
+	flag.StringVar(&cfg.DatabaseDSN, "d", "", dsnUsage)
 
 	flag.Parse()
 
@@ -58,7 +67,7 @@ func NewConfig() *Config {
 	}
 
 	// check store interval value
-	if *si <= 0 {
+	if *si < 0 {
 		cfg.StoreInterval = defaultStoreInterval
 	} else {
 		cfg.StoreInterval = *si
@@ -75,11 +84,15 @@ func NewConfig() *Config {
 		cfg.FileStoragePath = fileStoragePath
 	}
 
-	if fileRestore := os.Getenv("RESTORE"); fileRestore != "" {
-		envValue, err := strconv.ParseBool(fileRestore)
+	if restore := os.Getenv("RESTORE"); restore != "" {
+		envValue, err := strconv.ParseBool(restore)
 		if err == nil {
-			cfg.FileRestore = envValue
+			cfg.Restore = envValue
 		}
+	}
+
+	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
+		cfg.DatabaseDSN = databaseDSN
 	}
 
 	fmt.Printf("%+v\n\n", cfg)

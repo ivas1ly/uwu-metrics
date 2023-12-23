@@ -11,25 +11,25 @@ import (
 
 func New(log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		log = log.With(zap.String("middleware", "decompress"))
+		l := log.With(zap.String("middleware", "decompress"))
 
-		log.Info("added decompress middleware")
+		l.Info("added decompress middleware")
 
 		gzipFn := func(w http.ResponseWriter, r *http.Request) {
 			ok := checkHasGzipEncoding(r.Header.Values("Content-Encoding"))
 			if ok {
 				cr, err := newCompressReader(r.Body)
 				if err != nil {
-					log.Info("can't decompress body")
+					l.Info("can't decompress body")
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusBadRequest)
 
-					render.JSON(w, r, render.M{"message": "can't decompress body"})
+					render.JSON(w, r, render.M{"message": "can't decompress"})
 					return
 				}
 
 				r.Body = cr
-				log.Info("body decompressed")
+				l.Info("decompressed")
 				defer cr.Close()
 			}
 

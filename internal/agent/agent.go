@@ -20,8 +20,8 @@ const (
 	maxRandomValue = 100000
 )
 
-func Run(cfg *Config) {
-	log := logger.New(defaultLogLevel).
+func Run(cfg Config) {
+	log := logger.New(defaultLogLevel, logger.NewDefaultLoggerConfig()).
 		With(zap.String("app", "agent"))
 
 	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
@@ -30,7 +30,7 @@ func Run(cfg *Config) {
 	endpoint := url.URL{
 		Scheme: "http",
 		Host:   cfg.EndpointHost,
-		Path:   "/update/",
+		Path:   "/updates/",
 	}
 
 	metrics := &Metrics{}
@@ -59,7 +59,10 @@ func Run(cfg *Config) {
 				metrics.UpdateMetrics()
 			case rst := <-reportSendTicker.C:
 				log.Info("[report] metrics sent to server", zap.Time("sent at", rst))
-				client.SendReport()
+				err := client.SendReport()
+				if err != nil {
+					log.Info("[report] failed to send metrics to server")
+				}
 			case <-done:
 				log.Info("all tickers have been stopped")
 				return
@@ -69,7 +72,7 @@ func Run(cfg *Config) {
 
 	// block until signal is received
 	sig := <-c
-	log.Warn("app got os signal", zap.String("signal", sig.String()))
+	log.Info("app got os signal", zap.String("signal", sig.String()))
 	log.Info("gracefully shutting down...")
 	reportSendTicker.Stop()
 	metricsUpdateTicker.Stop()
