@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/lib/hash"
 )
 
 const defaultPayloadCap = 40
@@ -23,6 +24,7 @@ type Client struct {
 	Metrics *Metrics
 	Logger  *zap.Logger
 	URL     string
+	Key     []byte
 }
 
 type MetricsPayload struct {
@@ -107,6 +109,18 @@ func (c *Client) sendRequest(method string, body []byte) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
+
+	if len(c.Key) > 0 {
+		c.Logger.Info("hash key found, set the header with a body hash")
+
+		var sign string
+		if sign, err = hash.New(body, c.Key); err == nil {
+			c.Logger.Info("hash", zap.String("val", sign))
+			req.Header.Set("HashSHA256", sign)
+		} else {
+			c.Logger.Info("can't set hash header, skip header")
+		}
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

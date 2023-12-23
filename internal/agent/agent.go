@@ -39,6 +39,7 @@ func Run(cfg Config) {
 		URL:     endpoint.String(),
 		Metrics: metrics,
 		Logger:  log,
+		Key:     []byte(cfg.Key),
 	}
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
