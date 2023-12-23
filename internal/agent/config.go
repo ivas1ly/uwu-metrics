@@ -14,10 +14,12 @@ const (
 	defaultEndpointHost   = "localhost:8080"
 	defaultClientTimeout  = 3 * time.Second
 	defaultLogLevel       = "info"
+	exampleKey            = ""
 )
 
 type Config struct {
 	EndpointHost   string
+	Key            string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
 }
@@ -35,6 +37,9 @@ func NewConfig() Config {
 	pollIntervalUsage := fmt.Sprintf("frequency of polling metrics from the runtime package, example: %q",
 		defaultPollInterval)
 	pi := flag.Int("p", defaultPollInterval, pollIntervalUsage)
+
+	hashKeyUsage := fmt.Sprintf("key for signing the request body hash, example: %q", exampleKey)
+	flag.StringVar(&cfg.Key, "k", "", hashKeyUsage)
 
 	flag.Parse()
 
@@ -69,6 +74,12 @@ func NewConfig() Config {
 			cfg.PollInterval = time.Duration(envValue) * time.Second
 		}
 	}
+
+	if hashKey := os.Getenv("KEY"); hashKey != "" {
+		cfg.Key = hashKey
+	}
+
+	fmt.Printf("%+v\n\n", cfg)
 
 	return cfg
 }
