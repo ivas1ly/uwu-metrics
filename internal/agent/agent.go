@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"net/url"
 	"os"
 	"os/signal"
@@ -24,8 +25,9 @@ func Run(cfg Config) {
 	log := logger.New(defaultLogLevel, logger.NewDefaultLoggerConfig()).
 		With(zap.String("app", "agent"))
 
-	metricsUpdateTicker := time.NewTicker(cfg.PollInterval)
-	reportSendTicker := time.NewTicker(cfg.ReportInterval)
+	ctx := context.Background()
+	withCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	endpoint := url.URL{
 		Scheme: "http",
@@ -35,7 +37,7 @@ func Run(cfg Config) {
 
 	metrics := &Metrics{}
 
-	client := Client{
+	client := &Client{
 		URL:     endpoint.String(),
 		Metrics: metrics,
 		Logger:  log,
@@ -44,47 +46,61 @@ func Run(cfg Config) {
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	notifyCtx, stop := signal.NotifyContext(withCancel, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
 
-	done := make(chan bool)
+	go runMetricsUpdate(notifyCtx, metrics, cfg.PollInterval, log)
 
-	go func() {
-		defer func() {
-			done <- true
-		}()
-		for {
-			select {
-			case mut := <-metricsUpdateTicker.C:
-				log.Info("[update] metrics updated", zap.Time("updated at", mut))
-				metrics.UpdateMetrics()
-			case rst := <-reportSendTicker.C:
-				log.Info("[report] metrics sent to server", zap.Time("sent at", rst))
-				err := client.SendReport()
-				if err != nil {
-					log.Info("[report] failed to send metrics to server")
-				}
-			case <-done:
-				log.Info("all tickers have been stopped")
-				return
-			}
-		}
-	}()
+	go runReportSend(notifyCtx, client, cfg.ReportInterval, log)
 
 	// block until signal is received
-	sig := <-c
-	log.Info("app got os signal", zap.String("signal", sig.String()))
-	log.Info("gracefully shutting down...")
-	reportSendTicker.Stop()
-	metricsUpdateTicker.Stop()
+	<-notifyCtx.Done()
 
-	// stop goroutine
-	done <- true
-
-	// wait until done
-	<-done
+	log.Info("app got os signal", zap.String("signal", notifyCtx.Err().Error()))
+	log.Info("shutting down...")
+	// stop receiving signal notifications as soon as possible.
+	stop()
 
 	log.Info("shutdown successfully")
+}
+
+func runReportSend(ctx context.Context, client *Client, reportInterval time.Duration, log *zap.Logger) {
+	reportTicker := time.NewTicker(reportInterval)
+	defer reportTicker.Stop()
+
+	log.Info("start update metrics job", zap.Duration("interval", reportInterval))
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("received done context")
+			return
+		case rt := <-reportTicker.C:
+			log.Info("[report] metrics sent to server", zap.Time("sent at", rt))
+			err := client.SendReport()
+			if err != nil {
+				log.Info("[report] failed to send metrics to server")
+			}
+		}
+	}
+}
+
+func runMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.Duration, log *zap.Logger) {
+	updateTicker := time.NewTicker(pollInterval)
+	defer updateTicker.Stop()
+
+	log.Info("start update metrics job", zap.Duration("interval", pollInterval))
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("received done context")
+			return
+		case ut := <-updateTicker.C:
+			metrics.UpdateMetrics()
+			log.Info("[update] metrics updated", zap.Time("updated at", ut))
+		}
+	}
 }
 
 type Metrics struct {
