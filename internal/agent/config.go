@@ -15,6 +15,7 @@ const (
 	defaultClientTimeout  = 3 * time.Second
 	defaultLogLevel       = "info"
 	exampleKey            = ""
+	defaultRateLimit      = 1
 )
 
 type Config struct {
@@ -22,6 +23,7 @@ type Config struct {
 	Key            string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
+	RateLimit      int
 }
 
 func NewConfig() Config {
@@ -40,6 +42,10 @@ func NewConfig() Config {
 
 	hashKeyUsage := fmt.Sprintf("key for signing the request body hash, example: %q", exampleKey)
 	flag.StringVar(&cfg.Key, "k", "", hashKeyUsage)
+
+	rateLimitUsage := fmt.Sprintf("number of concurrent requests to the metrics server, example: %q",
+		defaultRateLimit)
+	flag.IntVar(&cfg.RateLimit, "l", defaultRateLimit, rateLimitUsage)
 
 	flag.Parse()
 
@@ -77,6 +83,13 @@ func NewConfig() Config {
 
 	if hashKey := os.Getenv("KEY"); hashKey != "" {
 		cfg.Key = hashKey
+	}
+
+	if rateLimit := os.Getenv("RATE_LIMIT"); rateLimit != "" {
+		envValue, err := strconv.Atoi(rateLimit)
+		if err == nil && envValue > 0 {
+			cfg.RateLimit = envValue
+		}
 	}
 
 	fmt.Printf("%+v\n\n", cfg)
