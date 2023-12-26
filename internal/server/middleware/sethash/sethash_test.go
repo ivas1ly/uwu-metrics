@@ -20,6 +20,7 @@ import (
 const (
 	defaultLogLevel          = "info"
 	defaultTestClientTimeout = 3 * time.Second
+	testText                 = "Test Data"
 )
 
 func TestSetHash(t *testing.T) {
@@ -33,8 +34,6 @@ func TestSetHash(t *testing.T) {
 
 		ts := httptest.NewServer(r)
 		defer ts.Close()
-
-		testText := "Test Data"
 
 		resp, respBody := testRequest(t, ts, http.MethodGet, "/", bytes.NewBuffer([]byte(testText)))
 		defer resp.Body.Close()
@@ -50,8 +49,6 @@ func TestSetHash(t *testing.T) {
 
 		ts := httptest.NewServer(r)
 		defer ts.Close()
-
-		testText := "Test Data"
 
 		resp, respBody := testRequest(t, ts, http.MethodGet, "/", bytes.NewBuffer([]byte(testText)))
 		defer resp.Body.Close()
