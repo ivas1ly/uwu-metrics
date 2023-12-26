@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 )
 
-func New(value, key []byte) (string, error) {
+func Hash(value, key []byte) (string, error) {
 	h := hmac.New(sha256.New, key)
 	_, err := h.Write(value)
 	if err != nil {

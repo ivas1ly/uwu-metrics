@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
-	"github.com/ivas1ly/uwu-metrics/internal/utils"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/randfloat"
 )
 
 const (
@@ -114,7 +114,7 @@ type Metrics struct {
 func (ms *Metrics) UpdateMetrics() {
 	runtime.ReadMemStats(&ms.MemStats)
 
-	ms.RandomValue = utils.RandFloat(minRandomValue, maxRandomValue)
+	ms.RandomValue = randfloat.RandFloat(minRandomValue, maxRandomValue)
 	ms.PollCount++
 
 	zap.L().Info("all metrics updated")

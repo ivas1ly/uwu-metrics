@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/lib/hash"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
 const defaultPayloadCap = 40
@@ -114,7 +114,7 @@ func (c *Client) sendRequest(method string, body []byte) error {
 		c.Logger.Info("hash key found, set the header with a body hash")
 
 		var sign string
-		if sign, err = hash.New(body, c.Key); err == nil {
+		if sign, err = hash.Hash(body, c.Key); err == nil {
 			c.Logger.Info("hash", zap.String("val", sign))
 			req.Header.Set("HashSHA256", sign)
 		} else {

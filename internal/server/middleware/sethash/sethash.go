@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/render"
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/internal/lib/hash"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
 func New(log *zap.Logger, key []byte) func(next http.Handler) http.Handler {
@@ -33,7 +33,7 @@ func New(log *zap.Logger, key []byte) func(next http.Handler) http.Handler {
 				return
 			}
 
-			sign, err := hash.New(buf, key)
+			sign, err := hash.Hash(buf, key)
 			if err != nil {
 				l.Info("can't get hash sign")
 
