@@ -10,7 +10,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/uwu-metrics/internal/agent/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
@@ -21,7 +21,7 @@ var (
 )
 
 type Client struct {
-	Metrics *Metrics
+	Metrics *metrics.Metrics
 	Logger  *zap.Logger
 	URL     string
 	Key     []byte
@@ -42,7 +42,7 @@ func (c *Client) SendReport() error {
 
 		mp := MetricsPayload{
 			ID:    key,
-			MType: entity.GaugeType,
+			MType: metrics.GaugeType,
 			Delta: nil,
 			Value: &val,
 		}
@@ -54,7 +54,7 @@ func (c *Client) SendReport() error {
 		val := value
 		mp := MetricsPayload{
 			ID:    key,
-			MType: entity.CounterType,
+			MType: metrics.CounterType,
 			Delta: &val,
 			Value: nil,
 		}
