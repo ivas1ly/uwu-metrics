@@ -30,7 +30,5 @@ func NewRouter(ms memory.Storage, db *postgres.DB, key string, log *zap.Logger) 
 
 	router.Get("/ping", handlers.PingDB(db, log))
 
-	router.Handle("/*", handlers.NotFound(log))
-
 	return router
 }
