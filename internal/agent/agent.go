@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
@@ -9,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
@@ -16,7 +19,7 @@ import (
 )
 
 const (
-	reportMapSize  = 28
+	reportMapSize  = 50
 	minRandomValue = 100
 	maxRandomValue = 100000
 )
@@ -50,6 +53,7 @@ func Run(cfg Config) {
 	defer stop()
 
 	go runMetricsUpdate(notifyCtx, metrics, cfg.PollInterval, log)
+	go runPsutilMetricsUpdate(notifyCtx, metrics, cfg.PollInterval, log)
 
 	go runReportSend(notifyCtx, client, cfg.ReportInterval, log)
 
@@ -103,10 +107,35 @@ func runMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.D
 	}
 }
 
+func runPsutilMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.Duration, log *zap.Logger) {
+	updateTicker := time.NewTicker(pollInterval)
+	defer updateTicker.Stop()
+
+	log.Info("start update metrics job", zap.Duration("interval", pollInterval))
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("received done context")
+			return
+		case ut := <-updateTicker.C:
+			err := metrics.UpdatePsutilMetrics()
+			if err != nil {
+				log.Info("[ERROR] can't get psutil metrics", zap.Error(err))
+				continue
+			}
+			log.Info("[update] psutil metrics updated", zap.Time("updated at", ut))
+		}
+	}
+}
+
 type Metrics struct {
 	// Gauge
-	MemStats    runtime.MemStats
-	RandomValue float64
+	UtilizationPerCPU []float64
+	MemStats          runtime.MemStats
+	RandomValue       float64
+	TotalMemory       float64
+	FreeMemory        float64
 	// Counter
 	PollCount int64
 }
@@ -118,6 +147,25 @@ func (ms *Metrics) UpdateMetrics() {
 	ms.PollCount++
 
 	zap.L().Info("all metrics updated")
+}
+
+func (ms *Metrics) UpdatePsutilMetrics() error {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return err
+	}
+
+	ms.TotalMemory = float64(v.Total)
+	ms.FreeMemory = float64(v.Free)
+
+	ms.UtilizationPerCPU, err = cpu.Percent(0, true)
+	if err != nil {
+		return err
+	}
+
+	zap.L().Info("psutil metrics updated")
+
+	return nil
 }
 
 func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
@@ -152,6 +200,13 @@ func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
 	report["TotalAlloc"] = float64(ms.MemStats.TotalAlloc)
 
 	report["RandomValue"] = ms.RandomValue
+
+	report["TotalMemory"] = ms.TotalMemory
+	report["FreeMemory"] = ms.FreeMemory
+
+	for cpuNum, utilization := range ms.UtilizationPerCPU {
+		report[fmt.Sprintf("CPUutilization%d", cpuNum)] = utilization
+	}
 
 	return report
 }
