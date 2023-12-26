@@ -26,12 +26,14 @@ const (
 	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/metrics?sslmode=disable"
 	defaultDatabaseConnTimeout  = 10 * time.Second
 	defaultDatabaseConnAttempts = 3
+	exampleKey                  = ""
 )
 
 type Config struct {
 	Endpoint        string
 	FileStoragePath string
 	DatabaseDSN     string
+	Key             string
 	StoreInterval   int
 	Restore         bool
 }
@@ -59,6 +61,10 @@ func NewConfig() Config {
 
 	dsnUsage := fmt.Sprintf("PostgreSQL connection string, example: %q", exampleDatabaseDSN)
 	flag.StringVar(&cfg.DatabaseDSN, "d", "", dsnUsage)
+
+	hashKeyUsage := fmt.Sprintf("key for checking the request hash and "+
+		"computing the response body hash, example: %q", exampleKey)
+	flag.StringVar(&cfg.Key, "k", "", hashKeyUsage)
 
 	flag.Parse()
 
@@ -93,6 +99,10 @@ func NewConfig() Config {
 
 	if databaseDSN := os.Getenv("DATABASE_DSN"); databaseDSN != "" {
 		cfg.DatabaseDSN = databaseDSN
+	}
+
+	if hashKey := os.Getenv("KEY"); hashKey != "" {
+		cfg.Key = hashKey
 	}
 
 	fmt.Printf("%+v\n\n", cfg)

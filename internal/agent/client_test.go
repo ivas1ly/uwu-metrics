@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
+	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
@@ -28,11 +29,11 @@ func TestClientSendRequest(t *testing.T) {
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
-	metrics := &Metrics{}
-	metrics.UpdateMetrics()
+	ms := &metrics.Metrics{}
+	ms.UpdateMetrics()
 
 	client := Client{
-		Metrics: metrics,
+		Metrics: ms,
 		Logger:  zap.Must(zap.NewDevelopment()),
 		URL:     ts.URL + endpoint,
 	}
@@ -41,7 +42,6 @@ func TestClientSendRequest(t *testing.T) {
 
 	for key, value := range client.Metrics.PrepareGaugeReport() {
 		val := value
-
 		mp := MetricsPayload{
 			ID:    key,
 			MType: entity.GaugeType,
@@ -82,11 +82,11 @@ func TestClientSendReport(t *testing.T) {
 		ts := httptest.NewServer(router)
 		defer ts.Close()
 
-		metrics := &Metrics{}
-		metrics.UpdateMetrics()
+		ms := &metrics.Metrics{}
+		ms.UpdateMetrics()
 
 		client := Client{
-			Metrics: metrics,
+			Metrics: ms,
 			Logger:  zap.Must(zap.NewDevelopment()),
 			URL:     ts.URL + endpoint,
 		}
@@ -95,11 +95,11 @@ func TestClientSendReport(t *testing.T) {
 	})
 
 	t.Run("metrics server is not working", func(t *testing.T) {
-		metrics := &Metrics{}
-		metrics.UpdateMetrics()
+		ms := &metrics.Metrics{}
+		ms.UpdateMetrics()
 
 		client := Client{
-			Metrics: metrics,
+			Metrics: ms,
 			Logger:  zap.Must(zap.NewDevelopment()),
 			URL:     "",
 		}

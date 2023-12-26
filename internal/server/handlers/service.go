@@ -28,10 +28,3 @@ func PingDB(db *postgres.DB, log *zap.Logger) http.HandlerFunc {
 		}
 	}
 }
-
-func NotFound(log *zap.Logger) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Info("route not found :(", zap.String("path", r.URL.Path))
-		http.NotFound(w, r)
-	}
-}
