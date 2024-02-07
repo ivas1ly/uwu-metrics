@@ -22,7 +22,7 @@ func TestRoute(t *testing.T) {
 	log := zap.Must(zap.NewDevelopment())
 	ms := memory.NewMemStorage()
 
-	router := NewRouter(ms, nil, log)
+	router := NewRouter(ms, nil, "", log)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()

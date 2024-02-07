@@ -50,7 +50,7 @@ func Run(cfg Config) {
 		log.Info("can't restore metrics from persistent storage", zap.Error(err))
 	}
 
-	router := NewRouter(memStorage, db, log)
+	router := NewRouter(memStorage, db, cfg.Key, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
