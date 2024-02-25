@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof" //nolint:gosec // exposed on a separate port that should be unavailable
 	"os"
 	"os/signal"
 	"syscall"
@@ -88,6 +89,14 @@ func runServer(ctx context.Context, endpoint string, router *chi.Mux, log *zap.L
 		WriteTimeout:      defaultWriteTimeout,
 		IdleTimeout:       defaultIdleTimeout,
 	}
+
+	go func() {
+		log.Info("start pprof server")
+		//nolint:gosec // use the default configuration for pprof
+		if err := http.ListenAndServe(defaultPprofAddr, nil); err != nil {
+			log.Fatal("pprof server", zap.Error(err))
+		}
+	}()
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

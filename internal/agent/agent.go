@@ -2,6 +2,8 @@ package agent
 
 import (
 	"context"
+	"net/http"
+	_ "net/http/pprof" //nolint:gosec // exposed on a separate port that should be unavailable
 	"net/url"
 	"os"
 	"os/signal"
@@ -29,6 +31,14 @@ func Run(cfg Config) {
 	}
 
 	ms := &metrics.Metrics{}
+
+	go func() {
+		log.Info("start pprof server")
+		//nolint:gosec // use the default configuration for pprof
+		if err := http.ListenAndServe(defaultPprofAddr, nil); err != nil {
+			log.Fatal("pprof server", zap.Error(err))
+		}
+	}()
 
 	client := &Client{
 		URL:     endpoint.String(),

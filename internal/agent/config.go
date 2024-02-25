@@ -16,6 +16,7 @@ const (
 	defaultLogLevel       = "info"
 	exampleKey            = ""
 	defaultRateLimit      = 1
+	defaultPprofAddr      = "localhost:9091"
 )
 
 type Config struct {

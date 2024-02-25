@@ -27,6 +27,7 @@ const (
 	defaultDatabaseConnTimeout  = 10 * time.Second
 	defaultDatabaseConnAttempts = 3
 	exampleKey                  = ""
+	defaultPprofAddr            = "localhost:9090"
 )
 
 type Config struct {
