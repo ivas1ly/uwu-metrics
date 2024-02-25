@@ -29,7 +29,7 @@ func TestLoggerMiddlewaware(t *testing.T) {
 	r.Use(New(log))
 
 	testText := "test"
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(testText))
 	})

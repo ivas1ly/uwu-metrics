@@ -90,7 +90,7 @@ func TestCheckHash(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r := chi.NewRouter()
 			r.Use(New(log, test.key))
-			r.Post("/", func(w http.ResponseWriter, r *http.Request) {
+			r.Post("/", func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			})
 
