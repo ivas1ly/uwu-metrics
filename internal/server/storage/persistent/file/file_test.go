@@ -72,3 +72,61 @@ func TestFileStorage(t *testing.T) {
 		assert.Equal(t, int64(123), counter)
 	})
 }
+
+func BenchmarkFileStorage(b *testing.B) {
+	tmpFile, err := os.CreateTemp("", "b-test-metrics")
+	if err != nil {
+		b.Fatal(err)
+	}
+	fileName := tmpFile.Name()
+
+	defer func(name string) {
+		err = os.Remove(name)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}(fileName)
+
+	ms := memory.NewMemStorage()
+	fileStorage := NewFileStorage(fileName, 0666, ms)
+
+	metrics := entity.Metrics{
+		Counter: make(map[string]int64),
+		Gauge:   make(map[string]float64),
+	}
+
+	metrics.Counter["counter 1"] = 678
+	metrics.Counter["counter 2"] = 123
+	metrics.Gauge["gauge 1"] = 123.456
+	metrics.Gauge["gauge 2"] = 789.456
+	metrics.Gauge["gauge 2"] = 0
+	b.ResetTimer()
+
+	b.Run("write to file", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			ms.SetMetrics(metrics)
+			b.StartTimer()
+
+			err = fileStorage.Save(context.Background())
+			assert.NoError(b, err)
+		}
+	})
+
+	b.Run("read from file", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			assert.FileExists(b, fileName)
+			assert.NoError(b, err)
+			b.StartTimer()
+
+			ms.SetMetrics(entity.Metrics{
+				Counter: make(map[string]int64),
+				Gauge:   make(map[string]float64),
+			})
+
+			err = fileStorage.Restore(context.Background())
+			assert.NoError(b, err)
+		}
+	})
+}
