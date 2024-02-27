@@ -2,7 +2,7 @@ package web
 
 import "embed"
 
-// Templates -
+// Templates variable for accessing HTML files for website handlers.
 // Issue - https://github.com/golang/go/issues/46056
 //
 //go:embed templates

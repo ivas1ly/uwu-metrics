@@ -11,6 +11,9 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
+// New constructs middleware to set SHA256 hash to validate the response on the client side.
+//
+// The hash string is written in the header HashSHA256.
 func New(log *zap.Logger, key []byte) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "set hash"))

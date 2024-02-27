@@ -20,6 +20,7 @@ var (
 	retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 )
 
+// Client is a structure for storing HTTP client parameters.
 type Client struct {
 	Metrics *metrics.Metrics
 	Logger  *zap.Logger
@@ -27,6 +28,7 @@ type Client struct {
 	Key     []byte
 }
 
+// MetricsPayload structure to convert metrics into JSON format for sending to the server.
 type MetricsPayload struct {
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
@@ -34,6 +36,9 @@ type MetricsPayload struct {
 	MType string   `json:"type"`
 }
 
+// SendReport prepares and sends metrics to the server.
+// If the metrics cannot be sent, it will retry to send the metrics
+// to the server several more times (3 times in total).
 func (c *Client) SendReport() error {
 	payload := make([]MetricsPayload, 0, defaultPayloadCap)
 
@@ -86,6 +91,7 @@ func (c *Client) SendReport() error {
 	return nil
 }
 
+// sendRequest wrapper method for net/http client.
 func (c *Client) sendRequest(method string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()

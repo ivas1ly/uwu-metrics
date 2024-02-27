@@ -24,6 +24,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
 )
 
+// Run starts the metrics server with the specified configuration.
 func Run(cfg Config) {
 	log := logger.New(defaultLogLevel, logger.NewDefaultLoggerConfig()).
 		With(zap.String("app", "server"))

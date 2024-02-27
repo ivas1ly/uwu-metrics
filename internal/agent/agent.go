@@ -16,6 +16,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 )
 
+// Run starts an agent to collect metrics with the specified configuration.
 func Run(cfg Config) {
 	log := logger.New(defaultLogLevel, logger.NewDefaultLoggerConfig()).
 		With(zap.String("app", "agent"))
@@ -68,6 +69,7 @@ func Run(cfg Config) {
 	log.Info("shutdown successfully")
 }
 
+// runReportSend starts the job of sending the collected metrics to the server.
 func runReportSend(ctx context.Context, client *Client, reportInterval time.Duration, log *zap.Logger) {
 	reportTicker := time.NewTicker(reportInterval)
 	defer reportTicker.Stop()

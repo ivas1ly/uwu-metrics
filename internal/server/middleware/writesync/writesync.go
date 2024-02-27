@@ -15,6 +15,8 @@ var (
 	retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 )
 
+// New constructs middleware to synchronously write to the persistent storage after each request.
+// The storage can be either a file or a database.
 func New(storage persistent.Storage, log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "write sync"))

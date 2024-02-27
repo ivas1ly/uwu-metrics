@@ -14,6 +14,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
+// NewRouter creates a new HTTP router and adds common middlewares for all handlers.
 func NewRouter(ms memory.Storage, db *postgres.DB, key string, log *zap.Logger) *chi.Mux {
 	router := chi.NewRouter()
 

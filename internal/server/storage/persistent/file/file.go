@@ -16,6 +16,7 @@ type fileStorage struct {
 	perm          os.FileMode
 }
 
+// NewFileStorage creates new persistent storage in the file.
 func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) persistent.Storage {
 	return &fileStorage{
 		fileName:      fileName,
@@ -24,6 +25,7 @@ func NewFileStorage(fileName string, perm os.FileMode, storage memory.Storage) p
 	}
 }
 
+// Save takes the metrics from memory and saves them to the file.
 func (fs *fileStorage) Save(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_WRONLY|os.O_CREATE, fs.perm)
 	if err != nil {
@@ -43,6 +45,7 @@ func (fs *fileStorage) Save(_ context.Context) error {
 	return nil
 }
 
+// Restore fetches the last saved metrics from the file and restores them to in-memory storage.
 func (fs *fileStorage) Restore(_ context.Context) error {
 	file, err := os.OpenFile(fs.fileName, os.O_RDONLY|os.O_CREATE, fs.perm)
 	if err != nil {

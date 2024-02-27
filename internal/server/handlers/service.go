@@ -8,6 +8,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 )
 
+// PingDB handler for checking the database connection status.
 func PingDB(db *postgres.DB, log *zap.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if db != nil {
