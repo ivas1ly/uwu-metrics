@@ -50,7 +50,11 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
 	"golang.org/x/tools/go/analysis/passes/unusedwrite"
 	"golang.org/x/tools/go/analysis/passes/usesgenerics"
+	"honnef.co/go/tools/analysis/lint"
+	"honnef.co/go/tools/quickfix"
+	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
+	"honnef.co/go/tools/stylecheck"
 )
 
 func main() {
@@ -109,7 +113,40 @@ func main() {
 		analyzers = append(analyzers, v.Analyzer)
 	}
 
+	staticAnalyzerNames := map[string]struct{}{
+		// ST – stylecheck analyzers
+		"ST1013": {},
+		"ST1015": {},
+		"ST1017": {},
+		// S - simple checks
+		"S1000": {},
+		"S1002": {},
+		"S1005": {},
+		// QF - quickfixes
+		"QF1004": {},
+		"QF1011": {},
+		"QF1012": {},
+	}
+
+	otherStaticcheckAnalyzers := [][]*lint.Analyzer{
+		stylecheck.Analyzers,
+		simple.Analyzers,
+		quickfix.Analyzers,
+	}
+
+	for _, otherAnalyzer := range otherStaticcheckAnalyzers {
+		addStaticAnalyzersByNames(&analyzers, otherAnalyzer, staticAnalyzerNames)
+	}
+
 	multichecker.Main(
 		analyzers...,
 	)
+}
+
+func addStaticAnalyzersByNames(analyzers *[]*analysis.Analyzer, analyzerChecks []*lint.Analyzer, checkNames map[string]struct{}) {
+	for _, v := range analyzerChecks {
+		if _, ok := checkNames[v.Analyzer.Name]; ok {
+			*analyzers = append(*analyzers, v.Analyzer)
+		}
+	}
 }
