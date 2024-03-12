@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/nikolaydubina/smrcptr/analysis/smrcptr"
+	"github.com/timakin/bodyclose/passes/bodyclose"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
@@ -138,12 +140,15 @@ func main() {
 		addStaticAnalyzersByNames(&analyzers, otherAnalyzer, staticAnalyzerNames)
 	}
 
+	analyzers = append(analyzers, smrcptr.Analyzer, bodyclose.Analyzer)
+
 	multichecker.Main(
 		analyzers...,
 	)
 }
 
-func addStaticAnalyzersByNames(analyzers *[]*analysis.Analyzer, analyzerChecks []*lint.Analyzer, checkNames map[string]struct{}) {
+func addStaticAnalyzersByNames(analyzers *[]*analysis.Analyzer, analyzerChecks []*lint.Analyzer,
+	checkNames map[string]struct{}) {
 	for _, v := range analyzerChecks {
 		if _, ok := checkNames[v.Analyzer.Name]; ok {
 			*analyzers = append(*analyzers, v.Analyzer)
