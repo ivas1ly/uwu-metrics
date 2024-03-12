@@ -57,10 +57,15 @@ import (
 	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 	"honnef.co/go/tools/stylecheck"
+
+	"github.com/ivas1ly/uwu-metrics/cmd/staticlint/exitcall"
 )
 
 func main() {
 	analyzers := []*analysis.Analyzer{
+		// static analyzer to check direct os.Exit call in main function of package main
+		exitcall.Analyzer,
+		// standard static analyzers of package golang.org/x/tools/go/analysis/passes
 		appends.Analyzer,
 		asmdecl.Analyzer,
 		assign.Analyzer,
