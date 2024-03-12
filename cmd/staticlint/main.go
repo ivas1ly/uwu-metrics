@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
@@ -52,11 +50,10 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
 	"golang.org/x/tools/go/analysis/passes/unusedwrite"
 	"golang.org/x/tools/go/analysis/passes/usesgenerics"
+	"honnef.co/go/tools/staticcheck"
 )
 
 func main() {
-	fmt.Println("start static code check")
-
 	analyzers := []*analysis.Analyzer{
 		appends.Analyzer,
 		asmdecl.Analyzer,
@@ -105,6 +102,11 @@ func main() {
 		unusedresult.Analyzer,
 		unusedwrite.Analyzer,
 		usesgenerics.Analyzer,
+	}
+
+	// add all "SA" analyzers from staticcheck.io
+	for _, v := range staticcheck.Analyzers {
+		analyzers = append(analyzers, v.Analyzer)
 	}
 
 	multichecker.Main(
