@@ -51,3 +51,13 @@ func TestRandFloat(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkRandFloat(b *testing.B) {
+	var minNum float64 = 10
+	var maxNum float64 = 100000
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		RandFloat(minNum, maxNum)
+	}
+}

@@ -27,8 +27,10 @@ const (
 	defaultDatabaseConnTimeout  = 10 * time.Second
 	defaultDatabaseConnAttempts = 3
 	exampleKey                  = ""
+	defaultPprofAddr            = "localhost:9090"
 )
 
+// Config structure contains the received information for running the application.
 type Config struct {
 	Endpoint        string
 	FileStoragePath string
@@ -38,6 +40,9 @@ type Config struct {
 	Restore         bool
 }
 
+// NewConfig creates a new configuration depending on the method.
+// It can be set either with command line flags or with environment variables.
+// Environment variables take precedence over flags.
 func NewConfig() Config {
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 

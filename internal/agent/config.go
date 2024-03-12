@@ -16,8 +16,10 @@ const (
 	defaultLogLevel       = "info"
 	exampleKey            = ""
 	defaultRateLimit      = 1
+	defaultPprofAddr      = "localhost:9091"
 )
 
+// Config structure contains the received information for running the application.
 type Config struct {
 	EndpointHost   string
 	Key            string
@@ -26,6 +28,9 @@ type Config struct {
 	RateLimit      int
 }
 
+// NewConfig creates a new configuration depending on the method.
+// It can be set either with command line flags or with environment variables.
+// Environment variables take precedence over flags.
 func NewConfig() Config {
 	cfg := Config{}
 

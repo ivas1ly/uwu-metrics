@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// New constructs a new zap logger.
 func New(level string, cfg zap.Config) *zap.Logger {
 	var logLevel zapcore.Level
 
@@ -42,6 +43,7 @@ func New(level string, cfg zap.Config) *zap.Logger {
 	return logger
 }
 
+// NewDefaultLoggerConfig gets the default configuration for the zap logger.
 func NewDefaultLoggerConfig() zap.Config {
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder

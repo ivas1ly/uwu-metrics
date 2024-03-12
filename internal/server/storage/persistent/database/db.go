@@ -63,6 +63,7 @@ type dbStorage struct {
 	timeout       time.Duration
 }
 
+// NewDBStorage creates new persistent storage in the database.
 func NewDBStorage(storage memory.Storage, db *postgres.DB, connTimeout time.Duration) persistent.Storage {
 	return &dbStorage{
 		memoryStorage: storage,
@@ -71,6 +72,7 @@ func NewDBStorage(storage memory.Storage, db *postgres.DB, connTimeout time.Dura
 	}
 }
 
+// Save takes the metrics from memory and saves them to the database.
 func (ds *dbStorage) Save(ctx context.Context) error {
 	metrics := ds.memoryStorage.GetMetrics()
 
@@ -116,6 +118,7 @@ func (ds *dbStorage) Save(ctx context.Context) error {
 	return nil
 }
 
+// Restore fetches the last saved metrics from the database and restores them to in-memory storage.
 func (ds *dbStorage) Restore(ctx context.Context) error {
 	var metrics entity.Metrics
 	metrics.Counter = make(map[string]int64)

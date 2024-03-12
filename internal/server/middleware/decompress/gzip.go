@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// New constructs a new gzip decompress middleware.
 func New(log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "decompress"))

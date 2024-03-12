@@ -57,3 +57,51 @@ func TestMemoryStorage(t *testing.T) {
 		assert.Equal(t, metrics, result)
 	})
 }
+
+func BenchmarkMemoryStorage(b *testing.B) {
+	ms := NewMemStorage()
+	b.ResetTimer()
+
+	b.Run("update counter", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			var testValueCounter int64 = 64
+			ms.UpdateCounter("my counter", testValueCounter)
+		}
+	})
+
+	b.Run("update gauge", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			testValueGauge := 128.32
+			ms.UpdateGauge("OwO gauge", testValueGauge)
+		}
+	})
+
+	b.Run("check for metrics", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := ms.GetCounter("UwU")
+			assert.Error(b, err)
+
+			_, err = ms.GetGauge("teeeeest!!")
+			assert.Error(b, err)
+		}
+	})
+
+	b.Run("check get/set metrics", func(b *testing.B) {
+		b.StopTimer()
+		metrics := entity.Metrics{
+			Counter: make(map[string]int64),
+			Gauge:   make(map[string]float64),
+		}
+
+		metrics.Counter["counter 1"] = 678
+		metrics.Counter["counter 2"] = 123
+		metrics.Gauge["gauge 1"] = 123.456
+		metrics.Gauge["gauge 2"] = 789.456
+		metrics.Gauge["gauge 2"] = 0
+		b.StartTimer()
+
+		for i := 0; i < b.N; i++ {
+			ms.SetMetrics(metrics)
+		}
+	})
+}

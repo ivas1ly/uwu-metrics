@@ -14,6 +14,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/migrations"
 )
 
+// RunMigrations applies migrations to the specified database.
 func RunMigrations(connString string, connAttempts int, connTimeout time.Duration) error {
 	var m *migrate.Migrate
 	var err error

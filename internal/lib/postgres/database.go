@@ -13,6 +13,7 @@ type DB struct {
 	*pgxpool.Pool
 }
 
+// New creates a connection to a PostgreSQL database.
 func New(ctx context.Context, connString string, connAttempts int, connTimeout time.Duration) (*DB, error) {
 	poolConfig, err := pgxpool.ParseConfig(connString)
 	if err != nil {

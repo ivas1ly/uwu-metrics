@@ -1,0 +1,39 @@
+# https://github.com/tsenart/vegeta
+# HTTP format https://github.com/tsenart/vegeta#http-format
+
+POST http://localhost:8080/updates
+Content-Type: application/json
+HashSHA256: c3f79b14c67d138e9dc5f89b7675de2aba1a5deaff10cc055fbb5d8e4c696915
+@agent-metrics.json
+
+POST http://localhost:8080/update/gauge/owo/123.456
+Content-Type: text/plain
+
+GET http://localhost:8080/value/gauge/owo
+Content-Type: text/plain
+
+POST http://localhost:8080/update/counter/uwu/123
+Content-Type: text/plain
+
+GET http://localhost:8080/value/counter/uwu
+Content-Type: text/plain
+
+GET http://localhost:8080/
+Content-Type: text/html; charset=utf-8
+Accept-Encoding: gzip
+
+POST http://localhost:8080/update
+Content-Type: application/json
+@json-gauge-update.json
+
+POST http://localhost:8080/update
+Content-Type: application/json
+@json-counter-update.json
+
+POST http://localhost:8080/value
+Content-Type: application/json
+@json-gauge-value.json
+
+POST http://localhost:8080/value
+Content-Type: application/json
+@json-counter-value.json

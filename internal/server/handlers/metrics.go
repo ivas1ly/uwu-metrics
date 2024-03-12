@@ -31,6 +31,7 @@ type metricsHandler struct {
 	log     *zap.Logger
 }
 
+// NewRoutes adds HTTP endpoints to work with metrics.
 func NewRoutes(router *chi.Mux, storage memory.Storage, log *zap.Logger) {
 	h := &metricsHandler{
 		storage: storage,
@@ -51,6 +52,7 @@ func NewRoutes(router *chi.Mux, storage memory.Storage, log *zap.Logger) {
 	})
 }
 
+// updateURL adds the metric specified in the URL to the storage.
 func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -102,6 +104,7 @@ func (h *metricsHandler) updateURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// valueURL gets the metric from the storage at the specified name in the URL.
 func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
@@ -155,6 +158,7 @@ func (h *metricsHandler) valueURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// webpage shows a static HTML page with the current metrics.
 func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFS(&web.Templates, "templates/*.gohtml")
 	if err != nil {
@@ -180,6 +184,7 @@ func (h *metricsHandler) webpage(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+// Metrics structure for unmarshaling metrics from the request body.
 type Metrics struct {
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
@@ -187,6 +192,7 @@ type Metrics struct {
 	MType string   `json:"type"`
 }
 
+// updateJSON adds the metric specified in the request body to the storage.
 func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -271,6 +277,7 @@ func (h *metricsHandler) updateJSON(w http.ResponseWriter, r *http.Request) {
 	h.log.Debug("in storage", zap.String("metrics", fmt.Sprintf("%+v", h.storage.GetMetrics())))
 }
 
+// updatesJSON adds the array of metrics specified in the body of the request to the storage.
 func (h *metricsHandler) updatesJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -325,6 +332,8 @@ func (h *metricsHandler) updatesJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// valueJSON gets the metric from the storage by the name and type of
+// metric specified in the JSON request body.
 func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -388,6 +397,7 @@ func (h *metricsHandler) valueJSON(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// checkRequestFields method for simple validation of query values.
 func checkRequestFields(request Metrics) ([]string, bool) {
 	var errMsg []string
 

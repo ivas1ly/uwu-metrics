@@ -21,6 +21,7 @@ const (
 	maxRandomValue = 100000
 )
 
+// Metrics structure for storing the values of the collected metrics.
 type Metrics struct {
 	// Gauge
 	UtilizationPerCPU []float64
@@ -32,6 +33,7 @@ type Metrics struct {
 	PollCount int64
 }
 
+// UpdateMetrics gets the current metrics values and updates them in the Metrics structure.
 func (ms *Metrics) UpdateMetrics() {
 	runtime.ReadMemStats(&ms.MemStats)
 
@@ -41,6 +43,7 @@ func (ms *Metrics) UpdateMetrics() {
 	zap.L().Info("all metrics updated")
 }
 
+// UpdatePsutilMetrics gets CPU and memory metrics values from the github.com/shirou/gopsutil package.
 func (ms *Metrics) UpdatePsutilMetrics() error {
 	v, err := mem.VirtualMemory()
 	if err != nil {
@@ -60,6 +63,7 @@ func (ms *Metrics) UpdatePsutilMetrics() error {
 	return nil
 }
 
+// PrepareGaugeReport prepares the gauge type metrics to be sent to the server.
 func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
 	report := make(map[string]float64, reportMapSize)
 
@@ -103,6 +107,7 @@ func (ms *Metrics) PrepareGaugeReport() map[string]float64 {
 	return report
 }
 
+// PrepareCounterReport prepares the counter type metrics to be sent to the server.
 func (ms *Metrics) PrepareCounterReport() map[string]int64 {
 	report := make(map[string]int64, 1)
 	report["PollCount"] = ms.PollCount
@@ -110,6 +115,7 @@ func (ms *Metrics) PrepareCounterReport() map[string]int64 {
 	return report
 }
 
+// RunMetricsUpdate runs periodic updates to the metrics values.
 func RunMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.Duration, log *zap.Logger) {
 	updateTicker := time.NewTicker(pollInterval)
 	defer updateTicker.Stop()
@@ -128,6 +134,7 @@ func RunMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.D
 	}
 }
 
+// RunPsutilMetricsUpdate runs periodic updates of metrics values from the github.com/shirou/gopsutil package.
 func RunPsutilMetricsUpdate(ctx context.Context, metrics *Metrics, pollInterval time.Duration, log *zap.Logger) {
 	updateTicker := time.NewTicker(pollInterval)
 	defer updateTicker.Stop()

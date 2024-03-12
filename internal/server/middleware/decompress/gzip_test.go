@@ -22,6 +22,7 @@ import (
 const (
 	defaultLogLevel          = "info"
 	defaultTestClientTimeout = 3 * time.Second
+	testData                 = "Test Data"
 )
 
 func TestGzipMiddleware(t *testing.T) {
@@ -39,8 +40,6 @@ func TestGzipMiddleware(t *testing.T) {
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
-
-	testData := "Test Data"
 
 	t.Run("can decompress body", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -87,4 +86,28 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string, header 
 	require.NoError(t, err)
 
 	return resp, string(respBody)
+}
+
+func BenchmarkGzip(b *testing.B) {
+	b.Run("decompress", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+			var buf bytes.Buffer
+			gz := gzip.NewWriter(&buf)
+			_, err := gz.Write([]byte(testData))
+			assert.NoError(b, err)
+			err = gz.Close()
+			assert.NoError(b, err)
+
+			rc := io.NopCloser(&buf)
+			buff := make([]byte, 1024)
+			b.StartTimer()
+
+			cr, err := newCompressReader(rc)
+			assert.NoError(b, err)
+
+			_, err = cr.Read(buff)
+			assert.ErrorIs(b, err, io.EOF)
+		}
+	})
 }

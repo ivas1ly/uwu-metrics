@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// New constructs a new HTTP request logger middleware module.
 func New(log *zap.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "logger"))

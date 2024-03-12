@@ -4,6 +4,7 @@ import (
 	"math/rand"
 )
 
+// RandFloat returns a random number in the specified range between the minimum and maximum.
 func RandFloat(min, max float64) float64 {
 	if max < min {
 		return 0

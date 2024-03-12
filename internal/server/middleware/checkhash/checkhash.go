@@ -11,6 +11,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
+// New constructs a new SHA256 hash check middleware.
 func New(log *zap.Logger, key []byte) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		l := log.With(zap.String("middleware", "check hash"))
