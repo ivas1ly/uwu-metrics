@@ -1,3 +1,5 @@
+// Package exitcall defines an Analyzer that checks for direct calls
+// of the os.Exit function in main function of main package.
 package exitcall
 
 import (
@@ -13,7 +15,7 @@ const (
 
 var Analyzer = &analysis.Analyzer{
 	Name: "exitcall",
-	Doc:  "check direct os.Exit call in function main of main package",
+	Doc:  "check direct os.Exit calls in function main of main package",
 	Run:  run,
 }
 
