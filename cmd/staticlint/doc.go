@@ -10,15 +10,11 @@
 //
 // Get a description of all the static checks:
 //
-//	./multichecker help
+//	./cmd/staticlint/multichecker help
 //
-// Run the multichecker with go run:
+// Run multichecker:
 //
-//	go run ./cmd/staticlint/main.go ./...
-//
-// Then get a description of all the static checks:
-//
-//	go run ./cmd/staticlint/main.go help
+//	./cmd/staticlint/multichecker ./...
 //
 // # Source
 //
