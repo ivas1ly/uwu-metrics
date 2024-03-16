@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/tools/go/analysis/analysistest"
 
-	"github.com/ivas1ly/uwu-metrics/cmd/staticlint/exitcall"
+	"github.com/ivas1ly/uwu-metrics/pkg/staticlint/exitcall"
 )
 
 func Test(t *testing.T) {

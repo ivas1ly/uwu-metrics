@@ -31,5 +31,5 @@
 //   - bodyclose — https://github.com/timakin/bodyclose
 //
 // Custom analyzers:
-//   - See staticlint/exitcall package.
+//   - See pkg/staticlint/exitcall package.
 package main

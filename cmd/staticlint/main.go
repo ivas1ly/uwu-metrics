@@ -58,7 +58,7 @@ import (
 	"honnef.co/go/tools/staticcheck"
 	"honnef.co/go/tools/stylecheck"
 
-	"github.com/ivas1ly/uwu-metrics/cmd/staticlint/exitcall"
+	"github.com/ivas1ly/uwu-metrics/pkg/staticlint/exitcall"
 )
 
 func main() {
