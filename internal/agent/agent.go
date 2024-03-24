@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"crypto/rsa"
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // exposed on a separate port that should be unavailable
 	"net/url"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
 )
 
 // Run starts an agent to collect metrics with the specified configuration.
@@ -41,11 +43,22 @@ func Run(cfg Config) {
 		}
 	}()
 
+	var publicKey *rsa.PublicKey
+	var err error
+	if cfg.PublicKeyPath != "" {
+		publicKey, err = rsakeys.PublicKey(cfg.PublicKeyPath)
+		if err != nil {
+			log.Warn("can't get public key from file", zap.Error(err))
+		}
+		log.Info("public key successfully loaded")
+	}
+
 	client := &Client{
-		URL:     endpoint.String(),
-		Metrics: ms,
-		Logger:  log,
-		Key:     []byte(cfg.Key),
+		URL:          endpoint.String(),
+		Metrics:      ms,
+		Logger:       log,
+		Key:          []byte(cfg.Key),
+		RSAPublicKey: publicKey,
 	}
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/database"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
 )
 
 // Run starts the metrics server with the specified configuration.
@@ -52,7 +54,16 @@ func Run(cfg Config) {
 		log.Info("can't restore metrics from persistent storage", zap.Error(err))
 	}
 
-	router := NewRouter(memStorage, db, cfg.Key, log)
+	var privateKey *rsa.PrivateKey
+	if cfg.PrivateKeyPath != "" {
+		privateKey, err = rsakeys.PrivateKey(cfg.PrivateKeyPath)
+		if err != nil {
+			log.Warn("can't get private key from file", zap.Error(err))
+		}
+		log.Info("private key successfully loaded")
+	}
+
+	router := NewRouter(memStorage, db, cfg.Key, privateKey, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
