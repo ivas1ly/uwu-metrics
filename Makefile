@@ -1,13 +1,22 @@
 .DEFAULT_GOAL := build
 
+.PHONY: help
+help: ## Display help screen
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
 .PHONY:clean
-clean:
+clean: ## Clean binary files
 	-rm -f ./cmd/agent/agent
 	-rm -f ./cmd/server/server
 
 .PHONY:statictest
-statictest:
+statictest: ## Run statictest
 	go vet -vettool=$$(which statictest) ./...
+
+.PHONY:multichecker
+multichecker: ## Run multichecker
+	go build -C ./cmd/staticlint/ -o ./cmd/staticlint/multichecker ;\
+	./cmd/staticlint/multichecker ./...
 
 .PHONY:iter1
 iter1: statictest build
@@ -157,10 +166,16 @@ iter14: iter13
 	go test -v -race ./...
 
 .PHONY:build
-build:
-	go build -C ./cmd/agent/ -o agent
-	go build -C ./cmd/server/ -o server
+build: ## Prepare binaries
+	go build -C ./cmd/agent/ -o agent \
+		-ldflags "-X main.buildVersion=v0.1.0 \
+    		-X 'main.buildDate=$$(date +'%Y/%m/%d %H:%M:%S')' \
+        	-X main.buildCommit=$$(git rev-parse --abbrev-ref HEAD)/$$(git rev-parse --short HEAD)" ;\
+    go build -C ./cmd/server/ -o server \
+    	-ldflags "-X main.buildVersion=v0.1.0 \
+        	-X 'main.buildDate=$$(date +'%Y/%m/%d %H:%M:%S')' \
+            -X main.buildCommit=$$(git rev-parse --abbrev-ref HEAD)/$$(git rev-parse --short HEAD)"
 
 .PHONY:lint
-lint:
+lint: ## Run linter
 	golangci-lint run -v
