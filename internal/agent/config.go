@@ -17,12 +17,14 @@ const (
 	exampleKey            = ""
 	defaultRateLimit      = 1
 	defaultPprofAddr      = "localhost:9091"
+	examplePublicKeyPath  = "./cmd/agent/public_key.pem"
 )
 
 // Config structure contains the received information for running the application.
 type Config struct {
 	EndpointHost   string
 	Key            string
+	PublicKeyPath  string
 	PollInterval   time.Duration
 	ReportInterval time.Duration
 	RateLimit      int
@@ -51,6 +53,10 @@ func NewConfig() Config {
 	rateLimitUsage := fmt.Sprintf("number of concurrent requests to the metrics server, example: %q",
 		defaultRateLimit)
 	flag.IntVar(&cfg.RateLimit, "l", defaultRateLimit, rateLimitUsage)
+
+	publicKeyPathUsage := fmt.Sprintf("path to the file with rsa public key, example: %s",
+		examplePublicKeyPath)
+	flag.StringVar(&cfg.PublicKeyPath, "crypto-key", "", publicKeyPathUsage)
 
 	flag.Parse()
 
@@ -95,6 +101,10 @@ func NewConfig() Config {
 		if err == nil && envValue > 0 {
 			cfg.RateLimit = envValue
 		}
+	}
+
+	if publicKey := os.Getenv("CRYPTO_KEY"); publicKey != "" {
+		cfg.PublicKeyPath = publicKey
 	}
 
 	fmt.Printf("%+v\n\n", cfg)

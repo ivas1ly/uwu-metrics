@@ -28,6 +28,7 @@ const (
 	defaultDatabaseConnAttempts = 3
 	exampleKey                  = ""
 	defaultPprofAddr            = "localhost:9090"
+	examplePrivateKeyPath       = "./cmd/server/private_key.pem"
 )
 
 // Config structure contains the received information for running the application.
@@ -36,6 +37,7 @@ type Config struct {
 	FileStoragePath string
 	DatabaseDSN     string
 	Key             string
+	PrivateKeyPath  string
 	StoreInterval   int
 	Restore         bool
 }
@@ -70,6 +72,10 @@ func NewConfig() Config {
 	hashKeyUsage := fmt.Sprintf("key for checking the request hash and "+
 		"computing the response body hash, example: %q", exampleKey)
 	flag.StringVar(&cfg.Key, "k", "", hashKeyUsage)
+
+	privateKeyPathUsage := fmt.Sprintf("path to the file with rsa private key, example: %s",
+		examplePrivateKeyPath)
+	flag.StringVar(&cfg.PrivateKeyPath, "crypto-key", "", privateKeyPathUsage)
 
 	flag.Parse()
 
@@ -108,6 +114,10 @@ func NewConfig() Config {
 
 	if hashKey := os.Getenv("KEY"); hashKey != "" {
 		cfg.Key = hashKey
+	}
+
+	if privateKeyPath := os.Getenv("CRYPTO_KEY"); privateKeyPath != "" {
+		cfg.PrivateKeyPath = privateKeyPath
 	}
 
 	fmt.Printf("%+v\n\n", cfg)
