@@ -1,0 +1,8 @@
+{
+  "address": "localhost:8082",
+  "report_interval": "12s",
+  "poll_interval": "3s",
+  "hash_key": "cde0eae6211b525aa851d670d236f6d3c1c29ae74915cb9642c79b38abfccd3c",
+  "rate_limit": 1,
+  "crypto_key": "./cmd/agent/public_key.pem"
+}
