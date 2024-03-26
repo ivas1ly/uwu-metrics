@@ -63,6 +63,7 @@ func Run(cfg Config) {
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
 
+	// context for receiving os signals
 	notifyCtx, stop := signal.NotifyContext(withCancel, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
@@ -78,6 +79,13 @@ func Run(cfg Config) {
 	log.Info("shutting down...")
 	// stop receiving signal notifications as soon as possible.
 	stop()
+
+	// save metrics before shutdown
+	err = client.SendReport()
+	if err != nil {
+		log.Info("failed to save metrics to the server before shutdown")
+	}
+	log.Info("metrics saved successfully")
 
 	log.Info("shutdown successfully")
 }
