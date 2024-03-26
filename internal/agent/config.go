@@ -48,25 +48,32 @@ type Config struct {
 // It can be set either with command line flags or with environment variables.
 // Environment variables take precedence over flags.
 func NewConfig() Config {
-	cfg := Config{}
+	cfg := Config{
+		EndpointHost:   defaultEndpointHost,
+		HashKey:        "",
+		PublicKeyPath:  "",
+		PollInterval:   defaultPollInterval,
+		ReportInterval: defaultReportInterval,
+		RateLimit:      defaultRateLimit,
+	}
 
 	endpointHostUsage := fmt.Sprintf("HTTP server report endpoint, example: %q", defaultEndpointHost)
-	endpointHost := flag.String(flagEndpointHost, defaultEndpointHost, endpointHostUsage)
+	endpointHost := flag.String(flagEndpointHost, "", endpointHostUsage)
 
 	reportIntervalUsage := fmt.Sprintf("frequency of sending metrics to the server, example: %q",
 		defaultReportInterval)
-	reportInterval := flag.Int(flagReportInterval, defaultReportInterval, reportIntervalUsage)
+	reportInterval := flag.Int(flagReportInterval, -1, reportIntervalUsage)
 
 	pollIntervalUsage := fmt.Sprintf("frequency of polling metrics from the runtime package, example: %q",
 		defaultPollInterval)
-	pollInterval := flag.Int(flagPollInterval, defaultPollInterval, pollIntervalUsage)
+	pollInterval := flag.Int(flagPollInterval, -1, pollIntervalUsage)
 
 	hashKeyUsage := fmt.Sprintf("key for signing the request body hash, example: %q", exampleKey)
 	hashKey := flag.String(flagHashKey, "", hashKeyUsage)
 
 	rateLimitUsage := fmt.Sprintf("number of concurrent requests to the metrics server, example: %q",
 		defaultRateLimit)
-	rateLimit := flag.Int(flagRateLimit, defaultRateLimit, rateLimitUsage)
+	rateLimit := flag.Int(flagRateLimit, 0, rateLimitUsage)
 
 	publicKeyPathUsage := fmt.Sprintf("path to the file with rsa public key, example: %s",
 		examplePublicKeyPath)
