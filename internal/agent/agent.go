@@ -57,7 +57,7 @@ func Run(cfg Config) {
 		URL:          endpoint.String(),
 		Metrics:      ms,
 		Logger:       log,
-		Key:          []byte(cfg.Key),
+		Key:          []byte(cfg.HashKey),
 		RSAPublicKey: publicKey,
 	}
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),

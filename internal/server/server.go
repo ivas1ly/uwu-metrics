@@ -63,7 +63,7 @@ func Run(cfg Config) {
 		log.Info("private key successfully loaded")
 	}
 
-	router := NewRouter(memStorage, db, cfg.Key, privateKey, log)
+	router := NewRouter(memStorage, db, cfg.HashKey, privateKey, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
