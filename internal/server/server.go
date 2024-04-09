@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/database"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
+	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
 )
 
 // Run starts the metrics server with the specified configuration.
@@ -52,7 +54,16 @@ func Run(cfg Config) {
 		log.Info("can't restore metrics from persistent storage", zap.Error(err))
 	}
 
-	router := NewRouter(memStorage, db, cfg.Key, log)
+	var privateKey *rsa.PrivateKey
+	if cfg.PrivateKeyPath != "" {
+		privateKey, err = rsakeys.PrivateKey(cfg.PrivateKeyPath)
+		if err != nil {
+			log.Warn("can't get private key from file", zap.Error(err))
+		}
+		log.Info("private key successfully loaded")
+	}
+
+	router := NewRouter(memStorage, db, cfg.HashKey, privateKey, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
@@ -64,20 +75,21 @@ func Run(cfg Config) {
 		go writeMetricsAsync(withCancel, log, persistentStorage, cfg.StoreInterval)
 	}
 
+	// context for receiving os signals
 	notifyCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
 
 	if err := runServer(notifyCtx, cfg.Endpoint, router, log); err != nil {
-		log.Info("unexpected server error", zap.Error(err))
+		log.Info("HTTP server", zap.Error(err))
 	}
 
 	// stop writeMetricsAsync job
 	cancel()
 
 	if err := persistentStorage.Save(ctx); err != nil {
-		log.Info("can't save metrics before shutting down", zap.Error(err))
+		log.Info("can't save metrics to persistent storage before shutting down", zap.Error(err))
 	} else {
-		log.Info("all metrics saved successfully")
+		log.Info("all metrics saved to persistent storage successfully")
 	}
 }
 
@@ -95,30 +107,32 @@ func runServer(ctx context.Context, endpoint string, router *chi.Mux, log *zap.L
 		log.Info("start pprof server")
 		//nolint:gosec // use the default configuration for pprof
 		if err := http.ListenAndServe(defaultPprofAddr, nil); err != nil {
-			log.Fatal("pprof server", zap.Error(err))
+			log.Error("pprof server", zap.Error(err))
 		}
 	}()
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal("unexpected server error", zap.Error(err))
+			log.Error("HTTP server ListenAndServe", zap.Error(err))
 		}
 	}()
 
 	log.Info("server started", zap.String("addr", endpoint))
+	// block until signal is received
 	<-ctx.Done()
 
-	log.Info("gracefully shutting down...")
+	log.Info("gracefully shutting down HTTP server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
 	defer cancel()
 
 	go func() {
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Info("unexpected server shutdown error", zap.Error(err))
+			log.Info("HTTP server shutdown", zap.Error(err))
 		}
 	}()
 
+	// block until timeout exceeded
 	<-shutdownCtx.Done()
 	if errors.Is(shutdownCtx.Err(), context.DeadlineExceeded) {
 		log.Info("timeout exceeded, forcing shutdown")

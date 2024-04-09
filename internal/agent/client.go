@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -22,10 +24,11 @@ var (
 
 // Client is a structure for storing HTTP client parameters.
 type Client struct {
-	Metrics *metrics.Metrics
-	Logger  *zap.Logger
-	URL     string
-	Key     []byte
+	Metrics      *metrics.Metrics
+	Logger       *zap.Logger
+	RSAPublicKey *rsa.PublicKey
+	URL          string
+	Key          []byte
 }
 
 // MetricsPayload structure to convert metrics into JSON format for sending to the server.
@@ -96,14 +99,37 @@ func (c *Client) sendRequest(method string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 
+	var sign string
+	var err error
+	if len(c.Key) > 0 {
+		c.Logger.Info("hash key found, set the header with a body hash")
+
+		if sign, err = hash.Hash(body, c.Key); err == nil {
+			c.Logger.Info("hash", zap.String("val", sign))
+		} else {
+			c.Logger.Info("can't set hash header, skip header")
+		}
+	}
+
+	var encrypted []byte
+	if c.RSAPublicKey != nil {
+		encrypted, err = rsa.EncryptPKCS1v15(rand.Reader, c.RSAPublicKey, body)
+		if err != nil {
+			c.Logger.Info("can't encrypt body with RSA public key", zap.Error(err))
+			return err
+		}
+
+		body = encrypted
+	}
+
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
-	if _, err := gw.Write(body); err != nil {
+	if _, err = gw.Write(body); err != nil {
 		c.Logger.Info("can't compress body", zap.Error(err))
 		return err
 	}
 
-	if err := gw.Close(); err != nil {
+	if err = gw.Close(); err != nil {
 		c.Logger.Info("can't close gzip writer", zap.Error(err))
 		return err
 	}
@@ -115,17 +141,8 @@ func (c *Client) sendRequest(method string, body []byte) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Content-Encoding", "gzip")
-
-	if len(c.Key) > 0 {
-		c.Logger.Info("hash key found, set the header with a body hash")
-
-		var sign string
-		if sign, err = hash.Hash(body, c.Key); err == nil {
-			c.Logger.Info("hash", zap.String("val", sign))
-			req.Header.Set("HashSHA256", sign)
-		} else {
-			c.Logger.Info("can't set hash header, skip header")
-		}
+	if sign != "" {
+		req.Header.Set("HashSHA256", sign)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
