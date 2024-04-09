@@ -16,6 +16,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
+	"github.com/ivas1ly/uwu-metrics/pkg/netutil"
 )
 
 // Run starts an agent to collect metrics with the specified configuration.
@@ -59,6 +60,7 @@ func Run(cfg Config) {
 		Logger:       log,
 		Key:          []byte(cfg.HashKey),
 		RSAPublicKey: publicKey,
+		LocalIP:      netutil.GetOutboundIP(),
 	}
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))

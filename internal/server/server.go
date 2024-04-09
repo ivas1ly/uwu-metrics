@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // exposed on a separate port that should be unavailable
 	"os"
@@ -63,7 +64,12 @@ func Run(cfg Config) {
 		log.Info("private key successfully loaded")
 	}
 
-	router := NewRouter(memStorage, db, cfg.HashKey, privateKey, log)
+	_, trustedSubnet, err := net.ParseCIDR(cfg.TrustedSubnet)
+	if err != nil {
+		log.Warn("can't parse trusted subnet CIDR")
+	}
+
+	router := NewRouter(memStorage, db, cfg.HashKey, privateKey, trustedSubnet, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))

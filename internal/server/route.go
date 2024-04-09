@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/rsa"
+	"net"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,6 +11,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/checkhash"
+	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/checkip"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/rsadecrypt"
@@ -18,9 +20,11 @@ import (
 )
 
 // NewRouter creates a new HTTP router and adds common middlewares for all handlers.
-func NewRouter(ms memory.Storage, db *postgres.DB, key string, privateKey *rsa.PrivateKey, log *zap.Logger) *chi.Mux {
+func NewRouter(ms memory.Storage, db *postgres.DB, key string,
+	privateKey *rsa.PrivateKey, trustedSubnet *net.IPNet, log *zap.Logger) *chi.Mux {
 	router := chi.NewRouter()
 
+	router.Use(checkip.New(log, trustedSubnet))
 	router.Use(middleware.Compress(defaultCompressLevel))
 	// an error occurs here, can't use "middleware" package name for my own middlewares
 	router.Use(decompress.New(log))

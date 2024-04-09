@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
+	"net"
 	"net/http"
 	"time"
 
@@ -27,6 +28,7 @@ type Client struct {
 	Metrics      *metrics.Metrics
 	Logger       *zap.Logger
 	RSAPublicKey *rsa.PublicKey
+	LocalIP      *net.IP
 	URL          string
 	Key          []byte
 }
@@ -140,6 +142,7 @@ func (c *Client) sendRequest(method string, body []byte) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Real-IP", c.LocalIP.String())
 	req.Header.Set("Content-Encoding", "gzip")
 	if sign != "" {
 		req.Header.Set("HashSHA256", sign)
