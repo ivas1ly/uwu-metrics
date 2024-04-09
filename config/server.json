@@ -5,5 +5,6 @@
   "store_file": "/tmp/metrics-db2.json",
   "database_dsn": "postgres://postgres:postgres@localhost:5432/metrics?sslmode=disable",
   "hash_key": "cde0eae6211b525aa851d670d236f6d3c1c29ae74915cb9642c79b38abfccd3c",
-  "crypto_key": "./cmd/server/private_key.pem"
+  "crypto_key": "./cmd/server/private_key.pem",
+  "trusted_subnet": "192.168.0.0/16"
 }

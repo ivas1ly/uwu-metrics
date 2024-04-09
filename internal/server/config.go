@@ -33,6 +33,7 @@ const (
 	defaultPprofAddr            = "localhost:9090"
 	examplePrivateKeyPath       = "./cmd/server/private_key.pem"
 	exampleConfigPathUsage      = "./config/server.json"
+	exampleTrustedSubnet        = ""
 )
 
 const (
@@ -43,6 +44,7 @@ const (
 	flagDatabaseDSN     = "d"
 	flagHashKey         = "k"
 	flagPrivateKey      = "crypto-key"
+	flagTrustedSubnet   = "t"
 )
 
 // Config structure contains the received information for running the application.
@@ -52,6 +54,7 @@ type Config struct {
 	DatabaseDSN     string
 	HashKey         string
 	PrivateKeyPath  string
+	TrustedSubnet   string
 	StoreInterval   int
 	Restore         bool
 }
@@ -70,6 +73,7 @@ func NewConfig() Config {
 		PrivateKeyPath:  "",
 		StoreInterval:   defaultStoreInterval,
 		Restore:         false,
+		TrustedSubnet:   "",
 	}
 
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
@@ -99,8 +103,12 @@ func NewConfig() Config {
 		examplePrivateKeyPath)
 	privateKeyPath := flag.String(flagPrivateKey, "", privateKeyPathUsage)
 
+	trustedSubnetUsage := fmt.Sprintf("subnet to verify that the request is from a trusted subnet, example: %s",
+		exampleTrustedSubnet)
+	trustedSubnet := flag.String(flagTrustedSubnet, "", trustedSubnetUsage)
+
 	var configPath string
-	configPathUsage := fmt.Sprintf(", example: %s", exampleConfigPathUsage)
+	configPathUsage := fmt.Sprintf("path to the file with with JSON config, example: %s", exampleConfigPathUsage)
 	flag.StringVar(&configPath, "config", "", configPathUsage)
 
 	flag.Parse()
@@ -144,6 +152,10 @@ func NewConfig() Config {
 		cfg.Restore = *restore
 	}
 
+	if flags.IsFlagPassed(flagTrustedSubnet) {
+		cfg.TrustedSubnet = *trustedSubnet
+	}
+
 	if endpoint := os.Getenv("ADDRESS"); endpoint != "" {
 		cfg.Endpoint = endpoint
 	}
@@ -185,6 +197,10 @@ func NewConfig() Config {
 		cfg.PrivateKeyPath = privateKeyPathEnv
 	}
 
+	if trustedSubnetEnv := os.Getenv("TRUSTED_SUBNET"); trustedSubnetEnv != "" {
+		cfg.TrustedSubnet = trustedSubnetEnv
+	}
+
 	fmt.Printf("\nstart application with final config: %+v\n\n", cfg)
 
 	return cfg
@@ -197,6 +213,7 @@ type FileConfig struct {
 	HashKey       string `json:"hash_key"`
 	CryptoKey     string `json:"crypto_key"`
 	StoreInterval string `json:"store_interval"`
+	TrustedSubnet string `json:"trusted_subnet"`
 	Restore       bool   `json:"restore"`
 }
 
@@ -222,6 +239,7 @@ func (c *Config) GetConfigFromFile(filePath string) error {
 	c.HashKey = fileConfig.HashKey
 	c.PrivateKeyPath = fileConfig.CryptoKey
 	c.Restore = fileConfig.Restore
+	c.TrustedSubnet = fileConfig.TrustedSubnet
 
 	seconds, err := time.ParseDuration(fileConfig.StoreInterval)
 	if err != nil {
