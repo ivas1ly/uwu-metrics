@@ -141,9 +141,13 @@ func (c *Client) sendRequest(method string, body []byte) error {
 		c.Logger.Info("can't create new HTTP request", zap.Error(err))
 		return err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Real-IP", c.LocalIP.String())
+	if c.LocalIP != nil {
+		req.Header.Set("X-Real-IP", c.LocalIP.String())
+	}
 	req.Header.Set("Content-Encoding", "gzip")
+
 	if sign != "" {
 		req.Header.Set("HashSHA256", sign)
 	}
