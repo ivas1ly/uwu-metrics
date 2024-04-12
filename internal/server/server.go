@@ -20,6 +20,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/migrate"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/writesync"
+	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/database"
@@ -69,7 +70,9 @@ func Run(cfg Config) {
 		log.Warn("can't parse trusted subnet CIDR")
 	}
 
-	router := NewRouter(memStorage, db, cfg.HashKey, privateKey, trustedSubnet, log)
+	metricsService := service.NewMetricsService(memStorage)
+
+	router := NewRouter(metricsService, db, cfg.HashKey, privateKey, trustedSubnet, log)
 
 	if cfg.StoreInterval == 0 {
 		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
@@ -123,7 +126,7 @@ func runServer(ctx context.Context, endpoint string, router *chi.Mux, log *zap.L
 		}
 	}()
 
-	log.Info("server started", zap.String("addr", endpoint))
+	log.Info("HTTP server started", zap.String("addr", endpoint))
 	// block until signal is received
 	<-ctx.Done()
 

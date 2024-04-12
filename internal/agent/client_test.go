@@ -14,6 +14,7 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
 	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
@@ -23,8 +24,9 @@ func TestClientSendRequest(t *testing.T) {
 	storage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(storage)
 
-	handlers.NewRoutes(router, storage, logger)
+	handlers.NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -75,8 +77,9 @@ func TestClientSendReport(t *testing.T) {
 	storage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(storage)
 
-	handlers.NewRoutes(router, storage, logger)
+	handlers.NewRoutes(router, metricsService, logger)
 
 	t.Run("with server", func(t *testing.T) {
 		ts := httptest.NewServer(router)
@@ -140,7 +143,7 @@ func (ts *testStorage) SetMetrics(metrics entity.Metrics) {
 func (ts *testStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ts.counter[name]
 	if !ok {
-		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+		return 0, fmt.Errorf("counter metric %q doesn't exist", name)
 	}
 	return counter, nil
 }
@@ -148,7 +151,7 @@ func (ts *testStorage) GetCounter(name string) (int64, error) {
 func (ts *testStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ts.gauge[name]
 	if !ok {
-		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+		return 0, fmt.Errorf("gauge metric %q doesn't exist", name)
 	}
 	return gauge, nil
 }

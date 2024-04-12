@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
+	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
@@ -29,8 +30,9 @@ func TestMetricsHandler(t *testing.T) {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -290,8 +292,9 @@ func TestMetricsHandlerJSON(t *testing.T) {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -502,7 +505,7 @@ func TestMetricsHandlerJSON(t *testing.T) {
 			body:   `{ "id":"unknown","type":"counter" }`,
 			want: want{
 				contentType: "application/json",
-				body:        `{"message":"counter metric unknown doesn't exist"}`,
+				body:        `{"message":"counter metric \"unknown\" doesn't exist\ncan't get metric value"}`,
 				statusCode:  404,
 			},
 		},
@@ -513,7 +516,7 @@ func TestMetricsHandlerJSON(t *testing.T) {
 			body:   `{ "id":"unknown","type":"gauge" }`,
 			want: want{
 				contentType: "application/json",
-				body:        `{"message":"gauge metric unknown doesn't exist"}`,
+				body:        `{"message":"gauge metric \"unknown\" doesn't exist\ncan't get metric value"}`,
 				statusCode:  404,
 			},
 		},
@@ -585,8 +588,9 @@ func TestMetricsUpdatesHandlerJSON(t *testing.T) {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -739,7 +743,7 @@ func (ts *testStorage) SetMetrics(metrics entity.Metrics) {
 func (ts *testStorage) GetCounter(name string) (int64, error) {
 	counter, ok := ts.counter[name]
 	if !ok {
-		return 0, fmt.Errorf("counter metric %s doesn't exist", name)
+		return 0, fmt.Errorf("counter metric %q doesn't exist", name)
 	}
 	return counter, nil
 }
@@ -747,7 +751,7 @@ func (ts *testStorage) GetCounter(name string) (int64, error) {
 func (ts *testStorage) GetGauge(name string) (float64, error) {
 	gauge, ok := ts.gauge[name]
 	if !ok {
-		return 0, fmt.Errorf("gauge metric %s doesn't exist", name)
+		return 0, fmt.Errorf("gauge metric %q doesn't exist", name)
 	}
 	return gauge, nil
 }
