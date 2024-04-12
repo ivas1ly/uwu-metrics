@@ -16,12 +16,6 @@ func New(log *zap.Logger, trustedSubnet *net.IPNet) func(next http.Handler) http
 		l.Info("added check ip address middleware")
 
 		checkHashFn := func(w http.ResponseWriter, r *http.Request) {
-			if trustedSubnet.IP == nil {
-				l.Info("trusted subnet is empty, skip ip address check")
-				next.ServeHTTP(w, r)
-				return
-			}
-
 			realIP := r.Header.Get("X-Real-IP")
 			l.Info("IP address", zap.String("X-Real-IP", realIP))
 
