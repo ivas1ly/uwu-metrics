@@ -56,7 +56,10 @@ func NewRouter(metricsService MetricsService, db *postgres.DB, key string,
 }
 
 func NewgRPCServer(metricsService MetricsService, log *zap.Logger) *grpc.Server {
-	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+	server := grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(reqlogger.NewInterceptor(log)),
+	)
 
 	reflection.Register(server)
 
