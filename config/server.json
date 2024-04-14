@@ -1,7 +1,8 @@
 {
   "address": "localhost:8081",
+  "grpc_address": "localhost:8099",
   "restore": true,
-  "store_interval": "60s",
+  "store_interval": "30s",
   "store_file": "/tmp/metrics-db2.json",
   "database_dsn": "postgres://postgres:postgres@localhost:5432/metrics?sslmode=disable",
   "hash_key": "cde0eae6211b525aa851d670d236f6d3c1c29ae74915cb9642c79b38abfccd3c",
