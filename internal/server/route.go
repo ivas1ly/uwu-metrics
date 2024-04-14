@@ -7,16 +7,21 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	gRPCHandlers "github.com/ivas1ly/uwu-metrics/internal/server/handlers/grpc"
+	handlers "github.com/ivas1ly/uwu-metrics/internal/server/handlers/http"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/checkhash"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/checkip"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/decompress"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/reqlogger"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/rsadecrypt"
 	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/sethash"
+	pb "github.com/ivas1ly/uwu-metrics/pkg/api/metrics"
 )
 
 type MetricsService interface {
@@ -48,4 +53,14 @@ func NewRouter(metricsService MetricsService, db *postgres.DB, key string,
 	router.Get("/ping", handlers.PingDB(db, log))
 
 	return router
+}
+
+func NewgRPCServer(metricsService MetricsService, log *zap.Logger) *grpc.Server {
+	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()))
+
+	reflection.Register(server)
+
+	pb.RegisterMetricsServiceServer(server, gRPCHandlers.NewRoutes(metricsService, log))
+
+	return server
 }

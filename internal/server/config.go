@@ -15,6 +15,7 @@ import (
 const (
 	defaultHost                 = "localhost"
 	defaultPort                 = "8080"
+	defaultgRPCPort             = "8099"
 	defaultReadTimeout          = 10 * time.Second
 	defaultReadHeaderTimeout    = 5 * time.Second
 	defaultWriteTimeout         = 10 * time.Second
@@ -38,6 +39,7 @@ const (
 
 const (
 	flagEndpoint        = "a"
+	flaggRPCEndpoint    = "grpc"
 	flagStoreInterval   = "i"
 	flagFileStoragePath = "f"
 	flagFileRestore     = "r"
@@ -50,6 +52,7 @@ const (
 // Config structure contains the received information for running the application.
 type Config struct {
 	Endpoint        string
+	GRPCEndpoint    string
 	FileStoragePath string
 	DatabaseDSN     string
 	HashKey         string
@@ -67,11 +70,12 @@ func NewConfig() Config {
 
 	cfg := Config{
 		Endpoint:        net.JoinHostPort(defaultHost, defaultPort),
+		GRPCEndpoint:    net.JoinHostPort(defaultHost, defaultgRPCPort),
 		FileStoragePath: defaultFileStoragePath,
 		DatabaseDSN:     "",
 		HashKey:         "",
 		PrivateKeyPath:  "",
-		StoreInterval:   defaultStoreInterval,
+		StoreInterval:   -1,
 		Restore:         false,
 		TrustedSubnet:   "",
 	}
@@ -79,6 +83,10 @@ func NewConfig() Config {
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
 		net.JoinHostPort(defaultHost, defaultPort), net.JoinHostPort("", defaultPort))
 	endpoint := flag.String(flagEndpoint, "", endpointUsage)
+
+	gRPCEndointUsage := fmt.Sprintf("gRPC server endpoint, example: %q or %q",
+		net.JoinHostPort(defaultHost, defaultgRPCPort), net.JoinHostPort("", defaultgRPCPort))
+	gRPCEndpoint := flag.String(flaggRPCEndpoint, "", gRPCEndointUsage)
 
 	storeIntervalUsage := fmt.Sprintf("time interval in seconds after which the server "+
 		"saves all collected metrics data to disk, example: \"%d\"", defaultStoreInterval)
@@ -128,6 +136,10 @@ func NewConfig() Config {
 		cfg.Endpoint = *endpoint
 	}
 
+	if flags.IsFlagPassed(flaggRPCEndpoint) {
+		cfg.GRPCEndpoint = *gRPCEndpoint
+	}
+
 	if flags.IsFlagPassed(flagFileStoragePath) {
 		cfg.FileStoragePath = *fileStoragePath
 	}
@@ -160,11 +172,13 @@ func NewConfig() Config {
 		cfg.Endpoint = endpoint
 	}
 
+	if gRPCEndpoint := os.Getenv("GRPC_ADDRESS"); gRPCEndpoint != "" {
+		cfg.GRPCEndpoint = gRPCEndpoint
+	}
+
 	// check store interval value
-	if *storeInterval < 0 {
+	if cfg.StoreInterval < 0 {
 		cfg.StoreInterval = defaultStoreInterval
-	} else {
-		cfg.StoreInterval = *storeInterval
 	}
 
 	if storeIntervalEnv := os.Getenv("STORE_INTERVAL"); storeIntervalEnv != "" {
@@ -208,6 +222,7 @@ func NewConfig() Config {
 
 type FileConfig struct {
 	Address       string `json:"address"`
+	GRPCAddress   string `json:"grpc_address"`
 	StoreFile     string `json:"store_file"`
 	DatabaseDSN   string `json:"database_dsn"`
 	HashKey       string `json:"hash_key"`
@@ -234,6 +249,7 @@ func (c *Config) GetConfigFromFile(filePath string) error {
 	fmt.Printf("config file: %+v\n", fileConfig)
 
 	c.Endpoint = fileConfig.Address
+	c.GRPCEndpoint = fileConfig.GRPCAddress
 	c.FileStoragePath = fileConfig.StoreFile
 	c.DatabaseDSN = fileConfig.DatabaseDSN
 	c.HashKey = fileConfig.HashKey

@@ -13,7 +13,7 @@ import (
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
 	"github.com/ivas1ly/uwu-metrics/internal/server/entity"
-	"github.com/ivas1ly/uwu-metrics/internal/server/handlers"
+	handlers "github.com/ivas1ly/uwu-metrics/internal/server/handlers/http"
 	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
