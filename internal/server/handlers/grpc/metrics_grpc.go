@@ -60,7 +60,7 @@ func (h *metricsgRPCHandler) Updates(ctx context.Context, in *pb.MetricsRequest)
 				entity.ErrEmptyMetricValue.Error(), metric.Mtype))
 		}
 		if errors.Is(err, entity.ErrCanNotGetMetricValue) {
-			h.log.Info("can't get updated value", zap.String("type", metric.Mtype), zap.String("name", metric.Id))
+			h.log.Info(entity.ErrCanNotGetMetricValue.Error(), zap.String("type", metric.Mtype), zap.String("name", metric.Id))
 			return nil, status.Error(codes.Internal, "")
 		}
 	}

@@ -272,7 +272,7 @@ func (h *metricsHandler) updatesJSON(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, entity.ErrCanNotGetMetricValue) {
-			h.log.Info("can't get updated value", zap.String("type", metric.MType), zap.String("name", metric.ID))
+			h.log.Info(entity.ErrCanNotGetMetricValue.Error(), zap.String("type", metric.MType), zap.String("name", metric.ID))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
