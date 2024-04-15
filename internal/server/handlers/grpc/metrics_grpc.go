@@ -21,14 +21,14 @@ type MetricsService interface {
 	UpsertTypeMetric(metric *entity.Metric) (*entity.Metric, error)
 }
 
-type metricsgRPCHandler struct {
+type MetricsgRPCHandler struct {
 	pb.UnimplementedMetricsServiceServer
 	metricsService MetricsService
 	log            *zap.Logger
 }
 
-func NewRoutes(metricsService MetricsService, log *zap.Logger) *metricsgRPCHandler {
-	h := &metricsgRPCHandler{
+func NewRoutes(metricsService MetricsService, log *zap.Logger) *MetricsgRPCHandler {
+	h := &MetricsgRPCHandler{
 		metricsService: metricsService,
 		log:            log.With(zap.String("gRPC handler", "metrics")),
 	}
@@ -36,7 +36,7 @@ func NewRoutes(metricsService MetricsService, log *zap.Logger) *metricsgRPCHandl
 	return h
 }
 
-func (h *metricsgRPCHandler) Updates(ctx context.Context, in *pb.MetricsRequest) (*emptypb.Empty, error) {
+func (h *MetricsgRPCHandler) Updates(_ context.Context, in *pb.MetricsRequest) (*emptypb.Empty, error) {
 	for _, metric := range in.Metrics {
 		errMsg, ok := checkRequestFields(metric)
 		if !ok {
