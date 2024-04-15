@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net"
@@ -20,13 +19,11 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/postgres"
 	"github.com/ivas1ly/uwu-metrics/internal/migrate"
-	"github.com/ivas1ly/uwu-metrics/internal/server/middleware/writesync"
 	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/database"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/persistent/file"
-	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
 )
 
 // Run starts the metrics server with the specified configuration.
@@ -57,29 +54,10 @@ func Run(cfg Config) {
 		log.Info("can't restore metrics from persistent storage", zap.Error(err))
 	}
 
-	var privateKey *rsa.PrivateKey
-	if cfg.PrivateKeyPath != "" {
-		privateKey, err = rsakeys.PrivateKey(cfg.PrivateKeyPath)
-		if err != nil {
-			log.Warn("can't get private key from file", zap.Error(err))
-		}
-		log.Info("private key successfully loaded")
-	}
-
-	_, trustedSubnet, err := net.ParseCIDR(cfg.TrustedSubnet)
-	if err != nil {
-		log.Warn("can't parse trusted subnet CIDR")
-	}
-
 	metricsService := service.NewMetricsService(memStorage)
 
-	router := NewRouter(metricsService, db, cfg.HashKey, privateKey, trustedSubnet, log)
-	grpc := NewgRPCServer(metricsService, log)
-
-	if cfg.StoreInterval == 0 {
-		log.Info("all data will be saved synchronously", zap.Int("store interval", cfg.StoreInterval))
-		router.Use(writesync.New(persistentStorage, log))
-	}
+	router := NewRouter(metricsService, persistentStorage, db, cfg, log.With(zap.String("server", "HTTP")))
+	grpc := NewgRPCServer(metricsService, persistentStorage, cfg, log.With(zap.String("server", "gRPC")))
 
 	if cfg.FileStoragePath != "" && cfg.StoreInterval > 0 {
 		log.Info("all data will be saved asynchronously", zap.Int("store interval", cfg.StoreInterval))
@@ -104,7 +82,8 @@ func Run(cfg Config) {
 	}
 }
 
-func runServer(ctx context.Context, endpoint, gRPCEndpoint string, router *chi.Mux, gRPCServer *grpc.Server, log *zap.Logger) error {
+func runServer(ctx context.Context, endpoint, gRPCEndpoint string, router *chi.Mux,
+	gRPCServer *grpc.Server, log *zap.Logger) error {
 	server := &http.Server{
 		Addr:              endpoint,
 		Handler:           router,

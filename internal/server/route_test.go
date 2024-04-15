@@ -23,8 +23,9 @@ func TestRoute(t *testing.T) {
 	log := zap.Must(zap.NewDevelopment())
 	ms := memory.NewMemStorage()
 	metricsService := service.NewMetricsService(ms)
+	cfg := NewConfig()
 
-	router := NewRouter(metricsService, nil, "", nil, nil, log)
+	router := NewRouter(metricsService, nil, nil, cfg, log)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
