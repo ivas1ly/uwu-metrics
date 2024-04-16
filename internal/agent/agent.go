@@ -14,10 +14,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/uwu-metrics/internal/agent/metrics"
+	gRPCClient "github.com/ivas1ly/uwu-metrics/internal/client/grpc"
+	HTTPClient "github.com/ivas1ly/uwu-metrics/internal/client/http"
 	"github.com/ivas1ly/uwu-metrics/internal/lib/logger"
 	"github.com/ivas1ly/uwu-metrics/internal/utils/rsakeys"
 	"github.com/ivas1ly/uwu-metrics/pkg/netutil"
 )
+
+type Client interface {
+	SendReport() error
+}
 
 // Run starts an agent to collect metrics with the specified configuration.
 func Run(cfg Config) {
@@ -27,12 +33,6 @@ func Run(cfg Config) {
 	ctx := context.Background()
 	withCancel, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	endpoint := url.URL{
-		Scheme: "http",
-		Host:   cfg.EndpointHost,
-		Path:   "/updates/",
-	}
 
 	ms := &metrics.Metrics{}
 
@@ -54,14 +54,23 @@ func Run(cfg Config) {
 		log.Info("public key successfully loaded")
 	}
 
-	client := &Client{
-		URL:          endpoint.String(),
-		Metrics:      ms,
-		Logger:       log,
-		Key:          []byte(cfg.HashKey),
-		RSAPublicKey: publicKey,
-		LocalIP:      netutil.GetOutboundIP(),
+	var client Client
+	if cfg.EndpointHost != "" {
+		httpEndpoint := url.URL{
+			Scheme: "http",
+			Host:   cfg.EndpointHost,
+			Path:   "/updates/",
+		}
+
+		client = HTTPClient.NewClient(ms, netutil.GetOutboundIP(), publicKey,
+			httpEndpoint.String(), []byte(cfg.HashKey), log.With(zap.String("client", "HTTP")))
 	}
+
+	if cfg.GRPCEndpointHost != "" {
+		client = gRPCClient.NewClient(ms, netutil.GetOutboundIP(),
+			cfg.GRPCEndpointHost, log.With(zap.String("client", "gRPC")))
+	}
+
 	log.Info("agent started", zap.String("server endpoint", cfg.EndpointHost),
 		zap.Duration("pollInterval", cfg.PollInterval), zap.Duration("reportInterval", cfg.ReportInterval))
 
@@ -93,7 +102,7 @@ func Run(cfg Config) {
 }
 
 // runReportSend starts the job of sending the collected metrics to the server.
-func runReportSend(ctx context.Context, client *Client, reportInterval time.Duration, log *zap.Logger) {
+func runReportSend(ctx context.Context, client Client, reportInterval time.Duration, log *zap.Logger) {
 	reportTicker := time.NewTicker(reportInterval)
 	defer reportTicker.Stop()
 
@@ -105,10 +114,11 @@ func runReportSend(ctx context.Context, client *Client, reportInterval time.Dura
 			log.Info("received done context")
 			return
 		case rt := <-reportTicker.C:
-			log.Info("[report] metrics sent to server", zap.Time("sent at", rt))
 			err := client.SendReport()
 			if err != nil {
 				log.Info("[report] failed to send metrics to server")
+			} else {
+				log.Info("[report] metrics sent to server", zap.Time("sent at", rt))
 			}
 		}
 	}

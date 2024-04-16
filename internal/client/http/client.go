@@ -1,4 +1,4 @@
-package agent
+package http
 
 import (
 	"bytes"
@@ -17,20 +17,39 @@ import (
 	"github.com/ivas1ly/uwu-metrics/internal/utils/hash"
 )
 
-const defaultPayloadCap = 40
+const (
+	defaultPayloadCap    = 40
+	defaultClientTimeout = 3 * time.Second
+)
 
 var (
 	retryIntervals = []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 )
 
+type Client interface {
+	SendReport() error
+}
+
 // Client is a structure for storing HTTP client parameters.
-type Client struct {
+type httpClient struct {
 	Metrics      *metrics.Metrics
 	Logger       *zap.Logger
 	RSAPublicKey *rsa.PublicKey
 	LocalIP      *net.IP
 	URL          string
-	Key          []byte
+	HashKey      []byte
+}
+
+func NewClient(metrics *metrics.Metrics, localIP *net.IP, publicKey *rsa.PublicKey,
+	url string, hashKey []byte, logger *zap.Logger) Client {
+	return &httpClient{
+		Metrics:      metrics,
+		Logger:       logger,
+		RSAPublicKey: publicKey,
+		LocalIP:      localIP,
+		URL:          url,
+		HashKey:      hashKey,
+	}
 }
 
 // MetricsPayload structure to convert metrics into JSON format for sending to the server.
@@ -44,7 +63,7 @@ type MetricsPayload struct {
 // SendReport prepares and sends metrics to the server.
 // If the metrics cannot be sent, it will retry to send the metrics
 // to the server several more times (3 times in total).
-func (c *Client) SendReport() error {
+func (c *httpClient) SendReport() error {
 	payload := make([]MetricsPayload, 0, defaultPayloadCap)
 
 	for key, value := range c.Metrics.PrepareGaugeReport() {
@@ -97,16 +116,16 @@ func (c *Client) SendReport() error {
 }
 
 // sendRequest wrapper method for net/http client.
-func (c *Client) sendRequest(method string, body []byte) error {
+func (c *httpClient) sendRequest(method string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultClientTimeout)
 	defer cancel()
 
 	var sign string
 	var err error
-	if len(c.Key) > 0 {
+	if len(c.HashKey) > 0 {
 		c.Logger.Info("hash key found, set the header with a body hash")
 
-		if sign, err = hash.Hash(body, c.Key); err == nil {
+		if sign, err = hash.Hash(body, c.HashKey); err == nil {
 			c.Logger.Info("hash", zap.String("val", sign))
 		} else {
 			c.Logger.Info("can't set hash header, skip header")

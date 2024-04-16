@@ -1,4 +1,4 @@
-package agent
+package http
 
 import (
 	"encoding/json"
@@ -34,7 +34,7 @@ func TestClientSendRequest(t *testing.T) {
 	ms := &metrics.Metrics{}
 	ms.UpdateMetrics()
 
-	client := Client{
+	client := httpClient{
 		Metrics: ms,
 		Logger:  zap.Must(zap.NewDevelopment()),
 		URL:     ts.URL + endpoint,
@@ -88,7 +88,7 @@ func TestClientSendReport(t *testing.T) {
 		ms := &metrics.Metrics{}
 		ms.UpdateMetrics()
 
-		client := Client{
+		client := httpClient{
 			Metrics: ms,
 			Logger:  zap.Must(zap.NewDevelopment()),
 			URL:     ts.URL + endpoint,
@@ -101,7 +101,7 @@ func TestClientSendReport(t *testing.T) {
 		ms := &metrics.Metrics{}
 		ms.UpdateMetrics()
 
-		client := Client{
+		client := httpClient{
 			Metrics: ms,
 			Logger:  zap.Must(zap.NewDevelopment()),
 			URL:     "",
