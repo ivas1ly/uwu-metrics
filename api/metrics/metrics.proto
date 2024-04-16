@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package metrics;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/ivas1ly/uwu-metrics/pkg/api/metrics";
+
+service MetricsService {
+  rpc Updates(MetricsRequest) returns (google.protobuf.Empty);
+}
+
+message Metric {
+  int64 delta = 1;
+  double value = 2;
+  string id = 3;
+  string mtype = 4;
+}
+
+message MetricsRequest {
+  repeated Metric metrics = 1;
+}
