@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"github.com/ivas1ly/uwu-metrics/internal/server/storage/memory"
 )
 
@@ -21,8 +22,10 @@ const (
 func TestRoute(t *testing.T) {
 	log := zap.Must(zap.NewDevelopment())
 	ms := memory.NewMemStorage()
+	metricsService := service.NewMetricsService(ms)
+	cfg := NewConfig()
 
-	router := NewRouter(ms, nil, "", nil, log)
+	router := NewRouter(metricsService, nil, nil, cfg, log)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()

@@ -15,6 +15,7 @@ import (
 const (
 	defaultHost                 = "localhost"
 	defaultPort                 = "8080"
+	defaultgRPCPort             = "8099"
 	defaultReadTimeout          = 10 * time.Second
 	defaultReadHeaderTimeout    = 5 * time.Second
 	defaultWriteTimeout         = 10 * time.Second
@@ -33,25 +34,30 @@ const (
 	defaultPprofAddr            = "localhost:9090"
 	examplePrivateKeyPath       = "./cmd/server/private_key.pem"
 	exampleConfigPathUsage      = "./config/server.json"
+	exampleTrustedSubnet        = ""
 )
 
 const (
 	flagEndpoint        = "a"
+	flaggRPCEndpoint    = "grpc"
 	flagStoreInterval   = "i"
 	flagFileStoragePath = "f"
 	flagFileRestore     = "r"
 	flagDatabaseDSN     = "d"
 	flagHashKey         = "k"
 	flagPrivateKey      = "crypto-key"
+	flagTrustedSubnet   = "t"
 )
 
 // Config structure contains the received information for running the application.
 type Config struct {
 	Endpoint        string
+	GRPCEndpoint    string
 	FileStoragePath string
 	DatabaseDSN     string
 	HashKey         string
 	PrivateKeyPath  string
+	TrustedSubnet   string
 	StoreInterval   int
 	Restore         bool
 }
@@ -64,17 +70,23 @@ func NewConfig() Config {
 
 	cfg := Config{
 		Endpoint:        net.JoinHostPort(defaultHost, defaultPort),
+		GRPCEndpoint:    net.JoinHostPort(defaultHost, defaultgRPCPort),
 		FileStoragePath: defaultFileStoragePath,
 		DatabaseDSN:     "",
 		HashKey:         "",
 		PrivateKeyPath:  "",
-		StoreInterval:   defaultStoreInterval,
+		StoreInterval:   -1,
 		Restore:         false,
+		TrustedSubnet:   "",
 	}
 
 	endpointUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
 		net.JoinHostPort(defaultHost, defaultPort), net.JoinHostPort("", defaultPort))
 	endpoint := flag.String(flagEndpoint, "", endpointUsage)
+
+	gRPCEndointUsage := fmt.Sprintf("gRPC server endpoint, example: %q or %q",
+		net.JoinHostPort(defaultHost, defaultgRPCPort), net.JoinHostPort("", defaultgRPCPort))
+	gRPCEndpoint := flag.String(flaggRPCEndpoint, "", gRPCEndointUsage)
 
 	storeIntervalUsage := fmt.Sprintf("time interval in seconds after which the server "+
 		"saves all collected metrics data to disk, example: \"%d\"", defaultStoreInterval)
@@ -99,8 +111,12 @@ func NewConfig() Config {
 		examplePrivateKeyPath)
 	privateKeyPath := flag.String(flagPrivateKey, "", privateKeyPathUsage)
 
+	trustedSubnetUsage := fmt.Sprintf("subnet to verify that the request is from a trusted subnet, example: %s",
+		exampleTrustedSubnet)
+	trustedSubnet := flag.String(flagTrustedSubnet, "", trustedSubnetUsage)
+
 	var configPath string
-	configPathUsage := fmt.Sprintf(", example: %s", exampleConfigPathUsage)
+	configPathUsage := fmt.Sprintf("path to the file with with JSON config, example: %s", exampleConfigPathUsage)
 	flag.StringVar(&configPath, "config", "", configPathUsage)
 
 	flag.Parse()
@@ -118,6 +134,10 @@ func NewConfig() Config {
 
 	if flags.IsFlagPassed(flagEndpoint) {
 		cfg.Endpoint = *endpoint
+	}
+
+	if flags.IsFlagPassed(flaggRPCEndpoint) {
+		cfg.GRPCEndpoint = *gRPCEndpoint
 	}
 
 	if flags.IsFlagPassed(flagFileStoragePath) {
@@ -144,15 +164,21 @@ func NewConfig() Config {
 		cfg.Restore = *restore
 	}
 
+	if flags.IsFlagPassed(flagTrustedSubnet) {
+		cfg.TrustedSubnet = *trustedSubnet
+	}
+
 	if endpoint := os.Getenv("ADDRESS"); endpoint != "" {
 		cfg.Endpoint = endpoint
 	}
 
+	if gRPCEndpoint := os.Getenv("GRPC_ADDRESS"); gRPCEndpoint != "" {
+		cfg.GRPCEndpoint = gRPCEndpoint
+	}
+
 	// check store interval value
-	if *storeInterval < 0 {
+	if cfg.StoreInterval < 0 {
 		cfg.StoreInterval = defaultStoreInterval
-	} else {
-		cfg.StoreInterval = *storeInterval
 	}
 
 	if storeIntervalEnv := os.Getenv("STORE_INTERVAL"); storeIntervalEnv != "" {
@@ -185,6 +211,10 @@ func NewConfig() Config {
 		cfg.PrivateKeyPath = privateKeyPathEnv
 	}
 
+	if trustedSubnetEnv := os.Getenv("TRUSTED_SUBNET"); trustedSubnetEnv != "" {
+		cfg.TrustedSubnet = trustedSubnetEnv
+	}
+
 	fmt.Printf("\nstart application with final config: %+v\n\n", cfg)
 
 	return cfg
@@ -192,11 +222,13 @@ func NewConfig() Config {
 
 type FileConfig struct {
 	Address       string `json:"address"`
+	GRPCAddress   string `json:"grpc_address"`
 	StoreFile     string `json:"store_file"`
 	DatabaseDSN   string `json:"database_dsn"`
 	HashKey       string `json:"hash_key"`
 	CryptoKey     string `json:"crypto_key"`
 	StoreInterval string `json:"store_interval"`
+	TrustedSubnet string `json:"trusted_subnet"`
 	Restore       bool   `json:"restore"`
 }
 
@@ -217,11 +249,13 @@ func (c *Config) GetConfigFromFile(filePath string) error {
 	fmt.Printf("config file: %+v\n", fileConfig)
 
 	c.Endpoint = fileConfig.Address
+	c.GRPCEndpoint = fileConfig.GRPCAddress
 	c.FileStoragePath = fileConfig.StoreFile
 	c.DatabaseDSN = fileConfig.DatabaseDSN
 	c.HashKey = fileConfig.HashKey
 	c.PrivateKeyPath = fileConfig.CryptoKey
 	c.Restore = fileConfig.Restore
+	c.TrustedSubnet = fileConfig.TrustedSubnet
 
 	seconds, err := time.ParseDuration(fileConfig.StoreInterval)
 	if err != nil {

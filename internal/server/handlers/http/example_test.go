@@ -1,4 +1,4 @@
-package handlers
+package http
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ivas1ly/uwu-metrics/internal/server/service"
 	"go.uber.org/zap"
 )
 
@@ -17,8 +18,9 @@ func Example_updateURL() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -66,8 +68,9 @@ func Example_valueURL() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	testStorage.UpdateCounter("uwu", 123)
 	testStorage.UpdateGauge("owo", 123.456)
@@ -126,8 +129,9 @@ func Example_webpage() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	testStorage.UpdateCounter("uwu", 123)
 	testStorage.UpdateGauge("owo", 123.456)
@@ -162,8 +166,9 @@ func Example_updateJSON() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -225,8 +230,9 @@ func Example_updatesJSON() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
@@ -265,8 +271,9 @@ func Example_valueJSON() {
 	testStorage := NewTestStorage()
 	logger := zap.Must(zap.NewDevelopment())
 	router := chi.NewRouter()
+	metricsService := service.NewMetricsService(testStorage)
 
-	NewRoutes(router, testStorage, logger)
+	NewRoutes(router, metricsService, logger)
 
 	ts := httptest.NewServer(router)
 	defer ts.Close()
